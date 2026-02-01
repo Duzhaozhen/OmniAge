@@ -1,3 +1,4 @@
+
 # OmniAge 🧬 
 
 **OmniAge** is a cross-platform computational suite designed for the robust estimation and analysis of biological aging biomarkers. It provides a unified framework supporting both **R** and **Python**, integrating a vast suite of aging clocks and biomarkers.
@@ -8,9 +9,8 @@
 
 This repository is organized as a monorepo to ensure version consistency across platforms:
 
-* **`OmniAgeR/`**: An R package tailored for bioinformatics workflows, featuring extensive visualization tools, data preprocessing, and established epigenetic clock implementations.
-* **`OmniAgePy/`**: A Python package (`omniage`) optimized for high-performance computing, machine learning integration, and large-scale aging score predictions.
-
+* **`OmniAgeR/`**: An R package providing the core implementation of aging clocks and biomarkers.
+* **`OmniAgePy/`**: A Python package (`omniage`) optimized for high-throughput aging omic biomarker prediction.
 ---
 
 ## 🚀 Installation
@@ -54,12 +54,25 @@ mitotic_ages = omniage.cal_epimarker(beta_df, clocks="Mitotic",ages=meta_df['Age
 ### R API
 ```r
 library(OmniAgeR)
+
 download_OmniAgeR_example("LungInv")
 load_OmniAgeR_example("LungInv")
 my_comparisons <- list(c("N\nN=21", "LCIS\nN=13"), c("LCIS\nN=13", "LCIS->LC\nN=22"))
 EpiAge.o<-EpiAge(data.m = bmiq.m,clock_names = "mitotic",ages.v = df$Age)
 ```
 
+---
 
+## 📖 Tutorials & Documentation
+
+We provide step-by-step guides to help you get started with OmniAge:
+
+### Python (omniage)
+* [Python Package Tutorial](tutorials/OmniAgePy_tutorial.pdf) - Comprehensive guide for the Python-based workflow
+
+### R (OmniAgeR)
+* [R Package Tutorial](tutorials/OmniAgeR_tutorial.pdf) - Comprehensive guide for the R-based workflow.
+
+---
 
 
