@@ -27,7 +27,9 @@ devtools::install_github("Duzhaozhen/OmniAge", subdir = "OmniAgeR")
 Install via pip with the subdirectory flag:
 
 ```r
-pip install git+[https://github.com/Duzhaozhen/OmniAge.git#subdirectory=OmniAgePy](https://github.com/Duzhaozhen/OmniAge.git#subdirectory=OmniAgePy)
+git clone https://github.com/Duzhaozhen/OmniAge.git
+cd OmniAge/OmniAgePy
+pip install .
 ```
 ---
 
