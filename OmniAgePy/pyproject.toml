@@ -20,7 +20,7 @@ dependencies = [
     "seaborn (>=0.13.0,<0.14.0)",       
     "statannotations (>=0.7.0,<0.8.0)", 
     "scanpy (>=1.10.0,<2.0.0)",         
-    "pyarrow (>=14.0.0,<23.0.0)"        
+    "pyarrow (>=14.0.0)"        
 ]
 [tool.poetry]
 packages = [{include = "omniage", from = "src"}]
