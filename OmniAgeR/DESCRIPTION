@@ -1,0 +1,33 @@
+Package: OmniAgeR
+Title: This package serves as a wrapper to calculate one or more aging
+        clocks from various omic data, including DNA methylation and
+        transcriptome data.
+Version: 0.7.0
+Authors@R: c(
+    person(given = "Zhaozhen",
+           family = "Du",
+           role = c("aut", "cre"),
+           email = "duzhaozhen2022@sinh.ac.cn"),
+    person(given = "Andrew E.",
+           family = "Teschendorff",
+           role = "aut",
+           email = "andrew@sinh.ac.cn"))
+Maintainer: Zhaozhen Du <duzhaozhen2022@sinh.ac.cn>
+Description: OmniAgeR is an R-package for estimating age from various omic data.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends: R (>= 3.5)
+LazyData: true
+Suggests: BiocStyle, ggplot2, ggpubr, knitr, patchwork, rmarkdown,
+        testthat (>= 3.0.0)
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+Imports: checkmate, dplyr, EpiDISH, glmnet, HiBED, magrittr,
+        preprocessCore, purrr, qs2, randomForest, rlang, Seurat, tidyr,
+        zen4R
+NeedsCompilation: no
+Packaged: 2025-11-28 02:21:21 UTC; duzhaozhen
+Author: Zhaozhen Du [aut, cre],
+  Andrew E. Teschendorff [aut]

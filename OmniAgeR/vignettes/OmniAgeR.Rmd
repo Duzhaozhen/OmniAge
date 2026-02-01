@@ -1,0 +1,707 @@
+---
+title: "Introduction to OmniAgeR"
+author:
+- name: Zhaozhen Du
+  affiliation: Shanghai Institute of Nutrition and Health, CAS
+  email: duzhaozhen2022@sinh.ac.cn
+- name: Andrew E. Teschendorff
+  affiliation: Shanghai Institute of Nutrition and Health, CAS
+  email: andrew@sinh.ac.cn
+package: OmniAgeR
+output: 
+  BiocStyle::html_document:
+    number_sections: true
+    toc: yes
+vignette: |
+  %\VignetteIndexEntry{Introduction to OmniAgeR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Overview of Implemented Clocks
+
+The `OmniAgeR` package provides two primary, high-level interfaces: EpiAge(): For calculating a comprehensive suite of aging-related clocks (chronological, biological, mitotic, etc.). EpiGA(): For calculating a specialized suite of gestational age clocks. For advanced users or specific applications, the package also provides direct access to individual clock functions (e.g., Horvath2013()) and specialized "bundle" calculators (e.g., PCClocks(), SystemsAge()) that manage complex dependencies. These tools are broadly categorized into three main groups:
+
+1.  **Epigenetic (DNAm) Clocks**
+2.  **Transcriptomic (RNA) Clocks**
+3.  **Other Aging-Related Surrogate Biomarkers**
+
+The suite of **epigenetic aging clocks** is particularly extensive, organized into several functional categories, including predictors for chronological age, biological age, cellular division (mitotic clocks), and gestational age.
+
+# Epigenetic (DNAm) Aging Clocks
+
+## Chronological Age Clocks
+
+These DNAm clocks are designed for the prediction of chronological age.
+
+-   `Horvath2013`: (Horvath 2013) The original pan-tissue clock from 353 CpGs.
+-   `Hannum`: (Hannum et al. 2013) Blood-specific clock from 71 CpGs.
+-   `Lin`: (Lin et al. 2016) Clock based on 99 CpGs.
+-   `VidalBralo`: (Vidal-Bralo et al. 2016) Clock based on 8 CpGs.
+-   `ZhangClock`: (Zhang et al. 2019) Improved-precision clock from 514 CpGs.
+-   `Horvath2018`: (Horvath et al. 2018) Skin & blood clock.
+-   `Bernabeu_cAge`: (Bernabeu et al. 2022) Clock based on 3225 CpGs.
+-   `CorticalClock`: (Shireby et al. 2020) Brain cortical clock based on 347 CpGs.
+-   `PedBE`: (McEwen et al. 2019) Pediatric buccal epithelial clock for children.
+-   `CentenarianClock`: (Eric Dec et al. 2023) Centenarian Epigenetic Clocks.
+-   `Retro_age`: (Ndhlovu et al. 2024) Retroelement-based clock developed on the EPIC v1/v2 arrays.
+-   `PCHorvath2013`, `PCHorvath2018`, `PCHannum`: (Higgins-Chen et al. 2022) Computationally-bolstered versions of the original clocks. These "PC clocks" are retrained using principal components (PCs) derived from a large CpG set to minimize technical noise and improve reliability
+
+## Biological Age Clocks
+
+These advanced clocks are designed to capture biological aging rather than chronological time, often showing stronger associations with health outcomes and mortality.
+
+-   `Zhang10`: (Zhang et al. 2017) 10-CpG clock associated with mortality.
+-   `PhenoAge`: (Levine et al. 2018) Predicts phenotypic age from 513 CpGs.
+-   `DunedinPACE`: (Belsky et al. 2022) Quantifies the pace of biological aging.
+-   `GrimAge1`: The original GrimAge clock (Lu et al. 2019).
+-   `GrimAge2`: (Lu et al. 2022) Updated composite biomarker of mortality risk.
+-   `PCPhenoAge`, `PCGrimAge1`: (Higgins-Chen et al. 2022) Computationally-bolstered PC versions of the PhenoAge and GrimAge1 clocks, retrained on principal components for enhanced reliability.
+-   `DNAmFitAge`: (McGreevy et al. 2023) Biological age indicator incorporating DNAmGrimAge and 3 DNAm-based physical fitness markers.
+-   `IC_Clock`: (Fuentealba et al. 2025) The Intrinsic Capacity (IC) Clock based on 91 CpGs.
+-   `SystemsAge`: (Sehgal et al. 2025) The Systems Age and 11 System-Specific Scores.
+
+## Cellular Aging Clocks
+
+This category groups biomarkers that measure two key forms of cellular aging: cell proliferation (mitotic clocks) and telomere attrition (DNAmTL).
+
+### Mitotic Clocks (Cellular Division)
+
+A specialized set of clocks that measure cell division history or stem cell divisions.
+
+-   `epiTOC1`: (Yang et al. 2016) Average beta value of 385 promoter CpGs.
+-   `epiTOC2`: (Teschendorff et al. 2020) Estimates stem cell divisions using a dynamic model.
+-   `epiTOC3`: Estimates stem cell divisions based on unmethylated population doubling associated CpGs.
+-   `stemTOCvitro`: (Zhu et al. 2024) The 0.95 upper quantile of 629 stemTOCvitro CpGs (promoter CpGs unmethylated in fetal tissue that hypermethylate with population-doublings).
+-   `stemTOC`: (Zhu et al. 2024) The 0.95 upper quantile of 371 stemTOC CpGs, filtered for in-vivo hypermethylation with age.
+-   `RepliTali`: (Endicott et al. 2022) Based on 87 population doubling associated hypomethylated CpGs.
+-   `HypoClock`: (Teschendorff et al. 2020) Based on hypomethylation at 678 solo-WCGW sites.
+-   `EpiCMIT_hyper`: (Duran-Ferrer et al. 2020) Average beta value of 184 age-associated hypermethylated CpGs.
+-   `EpiCMIT_hypo`: (Duran-Ferrer et al. 2020) Average beta value of 1164 age-associated hypomethylated CpGs.
+
+### DNAm Telomere Length (TL) Clocks
+
+-   `DNAmTL`: (Lu AT et al. 2019) Calculates the Leukocyte telomere length.
+-   `PCDNAmTL`: (Lu AT et al. 2019; Higgins-Chen et al. 2022) A computationally-bolstered "PC" version of the original DNAmTL clock. This clock is retrained using principal components (PCs) derived from a large CpG set to minimize technical noise and improve reliability.
+
+## Causal Clocks
+
+A new generation of clocks developed to reflect potential causal drivers of aging.
+
+-   `CausalAge`, `DamAge`, `AdaptAge`: (Ying et al. 2024) Three clocks derived from a causality-enriched model. They dissect aging into distinct components: 'Causal' (CausalAge), 'Damage' (DamAge), and Adaptation' (AdaptAge).
+
+## Stochastic Clocks
+
+-   `StocH`, `StocP`, `StocZ`: (Tong et al. 2024) Stochastic analogues of the Horvath, PhenoAge, and Zhang clocks, trained on artificial cohorts to quantify the stochastic component of epigenetic aging.
+
+## Cell-Type Specific Clocks
+
+These clocks are designed to measure aging in specific cell types or tissues, accounting for cellular heterogeneity.
+
+-   `Neu-In`, `Glia-In`: (Tong et al. 2024) Intrinsic clocks for neurons, and glia.
+-   `Neu-Sin`, `Glia-Sin`, `Hep`: (Tong et al. 2024) Semi-intrinsic clocks for neurons, glia, and hepatocytes
+
+## Gestational Age Clocks
+
+This collection includes DNAm clocks designed to predict gestational age at birth.
+
+-   `Bohlin_GA`: The Bohlin Gestational Age.
+-   `EPIC_GA`: The EPIC Gestational Age.
+-   `Lee_GA`: A list (LeeControl, LeeRobust, LeeRefinedRobust).
+-   `Knight_GA`: The Knight Gestational Age.
+-   `Mayne_GA`: The Mayne Placental Gestational Age.
+
+## Cross-Species Support
+-   `EnsembleAgeMouse_Dynamic`,`EnsembleAgeMouse_Static`, `EnsembleAgeHumanMouse`:  (Haghani et al. 2025) The multi-clock framework implementation. This includes mouse-specific estimators (Static and Dynamic) and a cross-species (HumanMouse) predictor applicable to both humans and mice
+
+-   `UniversalPanMammalianClocks`: (Lu et al. 2023) The three pan-tissue clocks (Clock 1, 2, 3) applicable across all mammalian tissues.
+-   `PanMammalianBlood`: (Lu et al. 2023) The two blood-specific pan-mammalian clocks (Clock 2, 3).
+-   `PanMammalianSkin`: (Lu et al. 2023) The two skin-specific pan-mammalian clocks (Clock 2, 3).
+
+# Transcriptomic Clocks
+
+In addition to DNAm-based models, the package implements cutting-edge transcriptomic (RNA-seq) clocks:
+
+-   `sc-ImmuAging`: A single-cell, immune-cell-type-specific aging clock.
+-   `Brain_CT_clock`: A brain-cell-type-specific aging clock based on Single-Nuclei Transcriptomics.
+-   `Pasta`: A robust, multi-tissue transcriptomic clock based on a novel age-shift learning strategy. It utilizes rank-normalization to ensure broad applicability across heterogeneous datasets, including bulk RNA-seq, single-cell pseudobulks, and microarrays.
+
+# Surrogate Biomarkers & Scores
+
+Besides, `OmniAgeR` includes functions to compute several other important surrogate markers associated with aging, lifestyle, and health status from DNAm data.
+
+-   `CompCRP`: Calculates a score for C-reactive protein (CRP) levels, a marker of inflammation.
+-   `CompCHIP`: Calculates scores for Clonal Hematopoiesis of Indeterminate Potential (CHIP).
+-   `CompIL6`: Computes a DNA methylation (DNAm) surrogate score for Interleukin-6 (IL-6) protein levels.
+-   `CompEpiScores`: Computes the 109 validated epigenetic scores (EpiScores) that serve as DNA methylation-based proxies for the levels of circulating plasma proteins as defined by Gadd et al. (2022).
+-   `McCartney_Trait`: Computes epigenetic surrogate scores for 10 different complex traits and biomarkers based on blood methylation models. Traits include: `BMI`, `Smoking` (pack-years), `Alcohol` (units/week), `Education` (years), `Total_cholesterol`, `HDL_cholesterol`, `LDL_cholesterol`, `Total_HDL_ratio`, `WHR` (Waist-to-Hip Ratio), and `Body_fat_Perc`.
+
+# DNA Methylation Cell-Type Fraction
+
+The OmniAgeR package also provides a DNA Methylation Cell-Type Fraction (CTF) clock (implemented as `DNAm_CTF_Clock`), which was trained on a large-scale NSPT dataset comprising more than 3,500 blood samples. The clock incorporates 12 immune cell types, estimated using the EpiDISH algorithm, to model aging based on cell-type composition.
+
+# Available Clocks and Functions
+
+## Epigenetic (DNAm) Aging Clocks
+
+| Clock Name | Category | Calculator / Function |
+|:--------------------|:-----------------|:--------------------------------|
+| `Horvath2013` | Chronological | `EpiAge()`,`Horvath2013()` |
+| `Hannum` | Chronological | `EpiAge()`,`Hannum()` |
+| `Lin` | Chronological | `EpiAge()`,`Lin()` |
+| `VidalBralo` | Chronological | `EpiAge()`,`VidalBralo()` |
+| `ZhangClock` | Chronological | `EpiAge()`,`ZhangClock()` |
+| `Horvath2018` | Chronological | `EpiAge()`,`Horvath2018()` |
+| `Bernabeu_cAge` | Chronological | `EpiAge()`,`Bernabeu_cAge()` |
+| `CorticalClock` | Chronological | `EpiAge()`,`CorticalClock()` |
+| `PedBE` | Chronological | `EpiAge()`,`PedBE()` |
+| `CentenarianClock` | Chronological | `EpiAge()`,`CentenarianClock()` |
+| `Retro_age` | Chronological | `EpiAge()`,`Retro_age()` |
+| `Zhang10` | Biological | `EpiAge()`,`Zhang10()` |
+| `PhenoAge` | Biological | `EpiAge()`,`PhenoAge()` |
+| `DunedinPACE` | Biological | `EpiAge()`,`DunedinPACE()` |
+| `GrimAge1` | Biological | `EpiAge()`,`GrimAge1()` |
+| `GrimAge2` | Biological | `EpiAge()`,`GrimAge2()` |
+| `DNAmFitAge` | Biological | `EpiAge()`,`DNAmFitAge()` |
+| `IC_Clock` | Biological | `EpiAge()`,`IC_Clock()` |
+| `SystemsAge` | Biological | `EpiAge()`,`SystemsAge()` |
+| `epiTOC1` | Mitotic | `EpiAge()`,`epiTOC1()` |
+| `epiTOC2` | Mitotic | `EpiAge()`,`epiTOC2()` |
+| `epiTOC3` | Mitotic | `EpiAge()`,`epiTOC3()` |
+| `stemTOCvitro` | Mitotic | `EpiAge()`,`stemTOCvitro()` |
+| `RepliTali` | Mitotic | `EpiAge()`,`RepliTali()` |
+| `HypoClock` | Mitotic | `EpiAge()`,`HypoClock()` |
+| `EpiCMIT_hyper`, `EpiCMIT_hypo` | Mitotic | `EpiAge()`,`EpiCMIT()` |
+| `DNAmTL` | Telomere length | `EpiAge()`,`DNAmTL()` |
+| `PCHorvath2013`,`PCHorvath2018`, `PCHannum`, `PCPhenoAge`, `PCGrimAge1`, `PCDNAmTL` | Chronological/Biological/Telomere length | `EpiAge()`,`PCClocks()` |
+| `CausalAge`,`DamAge`,`AdaptAge` | Causal | `EpiAge()`,`CausalClock()` |
+| `StocH`,`StocP`,`StocZ` | Causal | `EpiAge()`,`StochClocks()` |
+| `Neu-In`,`Glia-In`,`Neu-Sin`,`Glia-Sin`,`Hep` | Cell-Type Specific | `EpiAge()`,`CTS_Clocks()` |
+| `Bohlin_GA` | Gestational | `EpiGA()`,`Bohlin_GA()` |
+| `EPIC_GA` | Gestational | `EpiGA()`,`EPIC_GA()` |
+| `Lee_GA` | Gestational | `EpiGA()`,`Lee_GA()` |
+| `Knight_GA` | Gestational | `EpiGA()`,`Knight_GA()` |
+| `Mayne_GA` | Gestational | `EpiGA()`,`Mayne_GA()` |
+| `EnsembleAge` | Mouse & Human | `EnsembleAge()` |
+| `PanMammalianClocks` | PanMammalian | `UniversalPanMammalianClocks()` |
+| `PanMammalianBlood` | PanMammalian | `PanMammalianBlood()` |
+| `PanMammalianSkin` | PanMammalian | `PanMammalianSkin()` |
+ `DNAm_CTF_Clock` | Cell-Type Fraction Clock | `DNAm_CTF_Clock()` |
+
+
+## Transcriptomic Clocks
+
+| Clock Name       | Category                  | Calculator / Function |
+|:-----------------|:--------------------------|:----------------------|
+| `sc-ImmuAging`   | Immune-cell-type-specific | `scImmuAging()`       |
+| `Brain_CT_clock` | Brain-cell-type-specific  | `Brain_CT_clock()`    |
+| `Pasta`          | Multi-tissue              | `PASTA_Scores()`      |
+
+## Surrogate Biomarkers & Scores
+
+| Clock Name | Target | Calculator / Function |
+|:--------------------|:-----------------|:--------------------------------|
+| `CompCRP` | CRP/intCRP score | `CompCRP()` |
+| `CompCHIP` | CHIP score | `CompCHIP()` |
+| `CompIL6` | IL6 score | `CompIL6()` |
+| `CompEpiScores` | 109 validated epigenetic scores | `CompEpiScores()` |
+| `McCartney_Trait` | Epigenetic surrogate scores for 10 different complex traits | `McCartney_Trait()` |
+
+
+# Tutorial Example 1: Apply mitotic clocks on Lung pre-cancerous lesions
+
+## Loading the lung pre-cancerous lesions dataset
+
+This is an Illumina 450k dataset encompassing 21 normal lung tissue samples and 35 lung carcinoma in situ (LCIS) samples, of which 22 progressed to an invasive lung cancer (LC). Here we explore the correlation between mitotic age and cancer state with linear model, treating N, LCIS, and LC as ordinal variable (1,2,3) and adjusting for age.
+
+```{r}
+library(OmniAgeR)
+library(ggplot2)
+library(patchwork)
+library(ggpubr)
+download_OmniAgeR_example("LungInv")
+load_OmniAgeR_example("LungInv")
+my_comparisons <- list(c("N\nN=21", "LCIS\nN=13"), c("LCIS\nN=13", "LCIS->LC\nN=22"))
+table(df$Group)
+## Check available epigenetic clocks
+listEpiAge()
+```
+
+## Estimation of epigenetic mitotic age
+
+Mitotic age estimation of all the clocks is implemented in a general function *EpiMitClocks*. The required input is a DNAm beta value matrix with rows labeling Illumina 450k/EPIC CpGs and columns labeling samples.
+
+```{r}
+EpiAge.o<-EpiAge(data.m = bmiq.m,clock_names = "mitotic",ages.v = df$Age)
+rm(bmiq.m)
+```
+
+```{r make-large-plot-1, fig.width=12, fig.height=10, out.width="100%"}
+df$epiTOC1 <-EpiAge.o$epiTOC1
+df$epiTOC2 <-EpiAge.o$epiTOC2$irS
+df$epiTOC3 <-EpiAge.o$epiTOC3$irS
+df$stemTOCvitro <-EpiAge.o$stemTOCvitro
+df$stemTOC<-EpiAge.o$stemTOC
+df$HypoClock<-EpiAge.o$HypoClock
+df$RepliTali<-EpiAge.o$RepliTali
+df$EpiCMIT_Hyper<-EpiAge.o$EpiCMIT_Hyper
+df$EpiCMIT_Hypo<-EpiAge.o$EpiCMIT_Hypo
+g<-list()
+for (i in 1:9){
+  temp.df<-data.frame('Group'=df$Group,'Age'=df$Age,'num'=df$num,'score'=df[,i+3])
+  y<-summary(lm(temp.df$score~temp.df$num+temp.df$Age))$coefficients[2,4]
+  g[[i]]<-ggplot(temp.df,aes(x=Group,y=score,fill=Group))+guides(fill='none')+
+  geom_boxplot()+theme_bw()+
+  scale_x_discrete(limits=c('N\nN=21','LCIS\nN=13','LCIS->LC\nN=22'))+
+  stat_compare_means(method='wilcox.test',comparisons = my_comparisons, size = 4)+
+  xlab('')+ylab(colnames(df)[i+3])+
+  annotate('text',x=2,y=max(temp.df$score) * 0.9,label=paste0('P(Age-adjusted)=',signif(y,2)), size = 4)+
+  theme(
+      axis.title = element_text(size = 11),
+      axis.text = element_text(size = 11)
+    )
+
+}
+    
+ggpubr::ggarrange(plotlist = g, nrow = 3, ncol = 3)
+```
+
+# Tutorial Example 2: Predict chronological age in blood tissue
+
+The epigenetic age of 50 normal blood samples was estimated from their Illumina 450k methylation profiles using both the Horvath and Zhang epigenetic clocks.
+
+```{r}
+library(OmniAgeR)
+library(ggplot2)
+library(patchwork)
+library(ggpubr)
+download_OmniAgeR_example("Hannum_example")
+load_OmniAgeR_example("Hannum_example")
+age <- PhenoTypesHannum_lv$Age
+sex <- ifelse(PhenoTypesHannum_lv$Sex=="F","Female","Male")
+EpiAge.out <- EpiAge(hannum_bmiq_m,clock_names = c("Horvath2013","ZhangClock"))
+```
+
+```{r make-large-plot-2, fig.width=8, fig.height=4, out.width="100%"}
+gp<-list()
+
+for (i in seq_along(EpiAge.out)){
+  plot_df <- data.frame(ActualAge = PhenoTypesHannum_lv$Age, PredictedAge = EpiAge.out[[i]])
+  cor_test_result <- cor.test(plot_df$ActualAge, plot_df$PredictedAge)
+  correlation <- cor_test_result$estimate
+  p_value <- cor_test_result$p.value
+  mae <- mean(abs(plot_df$PredictedAge - plot_df$ActualAge))
+  p_value_formatted <- ifelse(p_value < 0.001,
+                            formatC(p_value, format = "e", digits = 2),
+                            round(p_value, 3))
+  annotation_text <- paste0(
+  "R = ", round(correlation, 3), "\n",
+  "P = ", p_value_formatted, "\n",
+  "MAE = ", round(mae, 2)
+  )
+  gp[[i]]<-ggplot(data = plot_df, aes(x = ActualAge, y = PredictedAge)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.8) +
+  geom_smooth(method = "lm",color = "black", se = FALSE) +
+  annotate("text",
+           x = min(plot_df$ActualAge, na.rm = TRUE),
+           y = max(plot_df$PredictedAge, na.rm = TRUE),
+           label = annotation_text,
+           hjust = 0,  
+           vjust = 1,             size = 5) +
+
+  labs(
+    title = NULL,
+    x = "Chronological Age",
+    y = paste0("Predicted Age(", c("Horvath2013","ZhangClock")[i],")")
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+
+}
+
+ggpubr::ggarrange(plotlist = gp, nrow = 1, ncol = 2)
+
+```
+
+# Tutorial Example 3: Predict gestational age
+
+A small demonstration dataset containing three samples, used to illustrate how to predict the gestational age of samples using DNAm Gestational Age Clocks.
+
+```{r}
+library(OmniAgeR)
+library(ggplot2)
+library(patchwork)
+library(ggpubr)
+## Check available epigenetic clocks
+listEpiGA()
+download_OmniAgeR_example("GA_example")
+load_OmniAgeR_example("GA_example")
+EpiGA.o <- EpiGA(GA_m,clock_names = c("Knight_GA","Mayne_GA"))
+```
+
+```{r make-large-plot-3, fig.width=8, fig.height=4, out.width="100%"}
+gp<-list()
+
+for (i in seq_along(EpiGA.o)){
+  plot_df <- data.frame(Gestational_Age = phenotypeGA$age, PredictedAge = EpiGA.o[[i]])
+  cor_test_result <- cor.test(plot_df$Gestational_Age, plot_df$PredictedAge)
+  correlation <- cor_test_result$estimate
+  p_value <- cor_test_result$p.value
+  mae <- mean(abs(plot_df$PredictedAge - plot_df$Gestational_Age))
+  p_value_formatted <- ifelse(p_value < 0.001,
+                            formatC(p_value, format = "e", digits = 2),
+                            round(p_value, 3))
+  annotation_text <- paste0(
+  "R = ", round(correlation, 3), "\n",
+  "P = ", p_value_formatted, "\n",
+  "MAE = ", round(mae, 2)
+  )
+  gp[[i]]<-ggplot(data = plot_df, aes(x = Gestational_Age, y = PredictedAge)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.8) +
+  geom_smooth(method = "lm",color = "black", se = FALSE) +
+  annotate("text",
+           x = min(plot_df$Gestational_Age, na.rm = TRUE),
+           y = max(plot_df$PredictedAge, na.rm = TRUE),
+           label = annotation_text,
+           hjust = 0,  
+           vjust = 1,             size = 5) +
+
+  labs(
+    title = NULL,
+    x = "Gestational Age(weeks)",
+    y = paste0("Predicted Age(", c("Knight_GA","Mayne_GA")[i],", weeks)")
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+
+}
+
+ggpubr::ggarrange(plotlist = gp, nrow = 1, ncol = 2)
+
+```
+
+# Tutorial Example 4: Apply sc-ImmuAging to PBMC scRNA-seq dataset
+
+In this example, we showcase the application of the cell-type-specific clock, scImmuAging, to a PBMC scRNA-seq dataset. The dataset includes 20 samples, profiled to contain only CD4+ and CD8+ T cells.
+
+```{r}
+library(OmniAgeR)
+library(Seurat)
+library(glmnet)
+library(ggplot2)
+library(patchwork)
+library(ggpubr)
+download_OmniAgeR_example("Yazar_CD4T_CD8T_example")
+load_OmniAgeR_example("Yazar_CD4T_CD8T_example")
+scImmuAging.out <- scImmuAging(seurat_obj,c("CD4T","CD8T"))
+```
+
+```{r make-large-plot-4, fig.width=8, fig.height=4, out.width="100%"}
+sc_gp<-list()
+
+for (i in seq_along(scImmuAging.out)){
+  plot_df <- data.frame(ActualAge = scImmuAging.out[[i]]$Donor$age, PredictedAge = scImmuAging.out[[i]]$Donor$predicted)
+  cor_test_result <- cor.test(plot_df$ActualAge, plot_df$PredictedAge)
+  correlation <- cor_test_result$estimate
+  p_value <- cor_test_result$p.value
+  mae <- mean(abs(plot_df$PredictedAge - plot_df$ActualAge))
+  p_value_formatted <- ifelse(p_value < 0.001,
+                            formatC(p_value, format = "e", digits = 2),
+                            round(p_value, 3))
+  annotation_text <- paste0(
+  "R = ", round(correlation, 3), "\n",
+  "P = ", p_value_formatted, "\n",
+  "MAE = ", round(mae, 2)
+  )
+  sc_gp[[i]]<-ggplot(data = plot_df, aes(x = ActualAge, y = PredictedAge)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.8) +
+  geom_smooth(method = "lm",color = "black", se = FALSE) +
+  annotate("text",
+           x = min(plot_df$ActualAge, na.rm = TRUE),
+           y = max(plot_df$PredictedAge, na.rm = TRUE),
+           label = annotation_text,
+           hjust = 0,  
+           vjust = 1, 
+           size = 5) +
+
+  labs(
+    title = c("CD4T","CD8T")[i],
+    x = "Chronological Age",
+    y = "Predicted Age(sc-ImmuAging)"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+
+}
+
+ggpubr::ggarrange(plotlist = sc_gp, nrow = 1, ncol = 2)
+```
+
+# Tutorial Example 5: Apply Brain_CT_clock to Brain snRNA-seq dataset
+
+In this example, we showcase the application of the brain cell-type-specific aging Clocks to a brain snRNA-seq dataset. The dataset includes 15 donors, profiled to contain only Oligodendrocytes.
+
+```{r}
+library(OmniAgeR)
+library(Seurat)
+library(glmnet)
+library(ggplot2)
+library(patchwork)
+library(ggpubr)
+library(dplyr)
+download_OmniAgeR_example("brain_frohlich_control_example_15donors")
+load_OmniAgeR_example("brain_frohlich_control_example_15donors")
+brain_clock_results <- Brain_CT_clock(
+   seurat_object = brain_seurat,
+   cell_types = c("Oligodendrocytes"),
+   model_name = "all" ##  c('SC', 'Pseudobulk', 'Bootstrap')
+ )
+
+# Use lapply to iterate over each data frame in the list
+average_predictions_by_donor <- lapply(brain_clock_results, function(df) {
+  df %>%
+    group_by(donors,ages,sample_type,celltype) %>%
+    summarise(mean_prediction = mean(predictions, na.rm = TRUE))
+})
+
+```
+
+```{r make-large-plot-5, fig.width=8, fig.height=3, out.width="100%"}
+brain_gp<-list()
+
+for (i in seq_along(average_predictions_by_donor)){
+  
+  plot_df <- data.frame(ActualAge = average_predictions_by_donor[[i]]$ages, PredictedAge = average_predictions_by_donor[[i]]$mean_prediction)
+  cor_test_result <- cor.test(plot_df$ActualAge, plot_df$PredictedAge)
+  correlation <- cor_test_result$estimate
+  p_value <- cor_test_result$p.value
+  mae <- mean(abs(plot_df$PredictedAge - plot_df$ActualAge))
+  p_value_formatted <- ifelse(p_value < 0.001,
+                            formatC(p_value, format = "e", digits = 2),
+                            round(p_value, 3))
+  annotation_text <- paste0(
+  "R = ", round(correlation, 3), "\n",
+  "P = ", p_value_formatted, "\n",
+  "MAE = ", round(mae, 2)
+  )
+  brain_gp[[i]]<-ggplot(data = plot_df, aes(x = ActualAge, y = PredictedAge)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.8) +
+  geom_smooth(method = "lm",color = "black", se = FALSE) +
+  annotate("text",
+           x = min(plot_df$ActualAge, na.rm = TRUE),
+           y = max(plot_df$PredictedAge, na.rm = TRUE),
+           label = annotation_text,
+           hjust = 0,  
+           vjust = 1, 
+           size = 4) +
+
+  labs(
+    title = "Oligodendrocytes",
+    x = "Chronological Age",
+    y = paste0("Predicted Age(",c('SC', 'Pseudobulk', 'Bootstrap')[i],")")
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12)
+  )
+
+}
+
+ggpubr::ggarrange(plotlist = brain_gp, nrow = 1, ncol = 3)
+
+```
+
+# Tutorial Example 6: Apply Pasta to Brain (MTG) scRNA-seq dataset
+
+In this example, we showcase the application of the Pasta clock to a single-nuclei RNA-seq dataset from the middle temporal gyrus (MTG) (Gabitto et al., 2024). The dataset includes 46 healthy donors and is filtered to contain extratelencephalic projecting glutamatergic cortical neurons.
+
+```{r}
+# Load required libraries
+library(OmniAgeR)
+library(Seurat)
+library(glmnet)
+library(magrittr) # For %>% pipe
+library(ggplot2)
+library(patchwork)
+library(ggpubr)    # For simplified plot annotations
+# Load the pre-filtered Seurat object
+download_OmniAgeR_example("seu_gabitto_2024_filtered")
+load_OmniAgeR_example("seu_gabitto_2024_filtered")
+# Extract and clean chronological age from metadata
+seu$age <- seu$development_stage %>%
+  gsub("-year.*", "", .) %>%             # Remove suffixes
+  gsub("-", " ", .) %>%                 # Remove hyphens
+  gsub("80 year old and over stage", "85", .) # Standardize 80+ category
+
+set.seed(42)
+
+# Create pseudobulk samples.
+# Cells are grouped by 'cell_type' and 'age', then aggregated into
+# chunks of 512 cells to simulate bulk RNA-seq samples.
+seu_bulk <- making_pseudobulks_from_seurat(seu,
+                                           pool_by = c("cell_type", "age"),
+                                           chunk_size = 512,
+                                           verbose = FALSE)
+
+# Extract the log-normalized expression matrix for prediction
+lognorm_matrix <- GetAssayData(seu_bulk, assay = "RNA", layer = "data")
+lognorm_matrix <- as.matrix(lognorm_matrix)
+
+# Extract the corresponding metadata for the new pseudobulk samples
+seu_bulk_meta <- seu_bulk[[c('chunk_size', 'cell_type', 'age')]]
+seu_bulk_meta$age <- as.numeric(seu_bulk_meta$age)
+
+# Apply the PASTA clock
+# filter_genes = TRUE: Selects only the genes required by the PASTA model.
+# rank_norm = TRUE: Applies the rank-normalization required by PASTA.
+PASTA_res <- PASTA_Scores(lognorm_matrix, filter_genes = TRUE, rank_norm = TRUE)
+```
+
+```{r make-large-plot-6, fig.width=4, fig.height=4, out.width="100%"}
+# Prepare the data frame for plotting
+plot_df <- data.frame(ActualAge = seu_bulk_meta$age, 
+                        Prediction = PASTA_res$PASTA)
+
+# Create the scatter plot
+ggplot(data = plot_df, aes(x = ActualAge, y = Prediction)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.8) +
+  geom_smooth(method = "lm", color = "black", se = FALSE) +
+  ggpubr::stat_cor(method = "pearson", 
+                   label.x.npc = "left",
+                   label.y.npc = "top", 
+                   hjust = 0,            
+                   size = 5) +
+  labs(
+    title = NULL,
+    x = "Chronological Age",
+    y = "PASTA Score"
+  ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    legend.position = "none"
+  )
+
+```
+
+# Tutorial Example 7: Calculate CPR and CHIP Scores
+
+Here, we use DNAm data to calculate the CRP score and CHIP score.
+
+```{r}
+library(OmniAgeR)
+download_OmniAgeR_example("Hannum_example")
+load_OmniAgeR_example("Hannum_example")
+CompCRP.o <- CompCRP(hannum_bmiq_m)
+print(lapply(CompCRP.o, head, 5))
+
+CompCHIP.o <- CompCHIP(hannum_bmiq_m)
+print(lapply(CompCHIP.o, head, 5))
+
+
+```
+
+
+# Tutorial Example 8: Get CpG Probes from Various DNAm Biomarkers
+
+
+```{r}
+library(OmniAgeR)
+# 1. Get probes for a specific chronological aging predictor
+chronological_probes <- getClockProbes(clock_names = "Horvath2013")
+print(head(chronological_probes$Horvath2013))
+# 2. Get probes for a specific biological aging clocks
+bio_probes <- getClockProbes(clock_names = "GrimAge1")
+print(head(bio_probes$GrimAge1))
+# 3. Get probes for all biomaker
+PCClocks_RData <- load_OmniAgeR_data(object_name = "PCClocks_data")
+SystemsAge_RData <- load_OmniAgeR_data(object_name = "SystemsAge_data")
+all_probes <- getClockProbes(clock_names = "all",PCClocks_RData,SystemsAge_RData)
+names(all_probes)[1:10]
+
+```
+
+# Tutorial Example 9: Celltype fraction clock based on DNAm
+We apply the DNAm Cell-type Fraction (CTF) Clock to 50 blood samples (EPIC array) from the TZH cohort to predict chronological age.
+
+```{r}
+library(OmniAgeR)
+library(ggplot2)
+library(patchwork)
+library(ggpubr)
+
+download_OmniAgeR_example("TZH_example_CTF")
+load_OmniAgeR_example("TZH_example_CTF")
+DNAm_CTF_Clock_o<-DNAm_CTF_Clock(CTF_m = TZH_Frac_m)
+
+
+```
+
+```{r make-large-plot-7, fig.width=4, fig.height=4, out.width="100%"}
+
+plot_df <- data.frame(ActualAge = PhenoTypes_TZH_df$Age, PredictedAge = DNAm_CTF_Clock_o)
+cor_test_result <- cor.test(plot_df$ActualAge, plot_df$PredictedAge)
+correlation <- cor_test_result$estimate
+p_value <- cor_test_result$p.value
+mae <- mean(abs(plot_df$PredictedAge - plot_df$ActualAge))
+p_value_formatted <- ifelse(p_value < 0.001,
+                          formatC(p_value, format = "e", digits = 2),
+                          round(p_value, 3))
+annotation_text <- paste0(
+"R = ", round(correlation, 3), "\n",
+"P = ", p_value_formatted, "\n",
+"MAE = ", round(mae, 2)
+)
+ggplot(data = plot_df, aes(x = ActualAge, y = PredictedAge)) +
+  geom_point(color = "steelblue", size = 3, alpha = 0.8) +
+  geom_smooth(method = "lm",color = "black", se = FALSE) +
+  annotate("text",
+         x = min(plot_df$ActualAge, na.rm = TRUE),
+         y = max(plot_df$PredictedAge, na.rm = TRUE),
+         label = annotation_text,
+         hjust = 0,  
+         vjust = 1,             size = 5) +
+
+  labs(
+    title = NULL,
+    x = "Chronological Age",
+    y = paste0("Predicted Age(DNAm_CTF)")
+    ) +
+  theme_bw() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12)
+    )
+
+
+
+#ggpubr::ggarrange(plotlist = gp, nrow = 1, ncol = 1)
+
+```
+
+```{r sessionInfo, echo=FALSE}
+sessionInfo()
+```
+
