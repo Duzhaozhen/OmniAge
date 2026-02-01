@@ -1,0 +1,24 @@
+# --- R 语言相关 (OmniAgeR) ---
+OmniAgeR/.Rhistory
+OmniAgeR/.RData
+OmniAgeR/.Rproj.user/
+OmniAgeR/*.Rproj
+# 注意：保留 OmniAgeR/data/ 因为里面有模型文件
+
+# --- Python 语言相关 (OmniAgePy) ---
+OmniAgePy/__pycache__/
+OmniAgePy/.venv/
+OmniAgePy/.pytest_cache/
+OmniAgePy/*.pyc
+OmniAgePy/dist/
+# 忽略解压后的原始 PMML 大家伙
+OmniAgePy/src/omniage/data/*.pmml
+
+# --- 存储与示例数据 (外部托管) ---
+# 忽略整个 Python 示例文件夹
+OmniAgePy/example/
+
+# --- 系统与通用 ---
+.DS_Store
+.vscode/
+.idea/

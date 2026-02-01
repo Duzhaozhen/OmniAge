@@ -1,0 +1,42 @@
+[project]
+name = "omniage"
+version = "0.1.0"
+description = "The package provides a comprehensive Python framework for aging research. It offers high-level interfaces for calculating a vast suite of aging-related clocks and biomarkers."
+authors = [
+    {name = "Du Zhaozhen",email = "duzhaozhen2022@sinh.ac.cn"},
+    {name = "Andrew E. Teschendorff",email = "andrew@sinh.ac.cn"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "numpy (<2.0)",
+    "pandas (>=2.3.3,<3.0.0)",
+    "scikit-learn (>=1.8.0,<2.0.0)",
+    "scipy (>=1.17.0,<2.0.0)",
+    "seaborn (>=0.13.2,<0.14.0)",
+    "matplotlib (>=3.10.8,<4.0.0)",
+    "statsmodels (>=0.14.6,<0.15.0)",
+    "scanpy (>=1.11.5,<2.0.0)",
+    "statannotations (>=0.7.2,<0.8.0)",
+    "pyarrow (>=22.0.0,<23.0.0)",
+    "pypmml (>=1.5.8,<2.0.0)",
+    "requests (>=2.32.5,<3.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "omniage", from = "src"}]
+include = ["src/omniage/data/**/*"]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[[tool.poetry.source]]
+name = "mirrors"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+priority = "primary"
+
+[dependency-groups]
+dev = [
+    "ipykernel (>=7.1.0,<8.0.0)"
+]
