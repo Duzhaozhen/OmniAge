@@ -31,6 +31,12 @@ git clone https://github.com/Duzhaozhen/OmniAge.git
 cd OmniAge/OmniAgePy
 pip install .
 ```
+> [!TIP]
+> If you encounter errors building **pyarrow** or **h5py** (common on Linux servers), we recommend pre-installing these dependencies via Conda:
+> 
+> ```bash
+> conda install -c conda-forge pyarrow h5py
+> ```
 ---
 
 ## 📖 Quick Start
