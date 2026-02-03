@@ -7,4 +7,5 @@ from .pan_mammalian import PanMammalianUniversal, PanMammalianBlood, PanMammalia
 from .ensemble import EnsembleAgeHumanMouse,EnsembleAgeStatic,EnsembleAgeDynamic
 from .SurrogateBiomarkers import CompCRP,CompCHIP,EpiScores,CompIL6
 from .gestational import *
+from .disease_risk import CompSmokeIndex
 from .dnam_ctf_clock import *

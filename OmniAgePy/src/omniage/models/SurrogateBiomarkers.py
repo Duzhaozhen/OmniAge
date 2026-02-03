@@ -407,7 +407,6 @@ class EpiScores:
 
 
 
-
 class CompIL6(BaseLinearClock):
     """
     DNA Methylation-Based Proxy for IL-6 (Interleukin-6).

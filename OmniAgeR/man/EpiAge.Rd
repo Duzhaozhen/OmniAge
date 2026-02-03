@@ -111,6 +111,13 @@ A list containing the entries for the calculated clocks.
 \item \code{GrimAge2}: A data.frame (Sample, Age, Female, DNAm..., DNAmGrimAge2).
 \item \code{CausalClock}: A list (Causal, Damage, Adaptation scores).
 \item \code{IC_Clock}: The Intrinsic Capacity (IC) score
+\item \code{ABEC}: ABEC age.
+\item \code{eABEC}: eABEC age.
+\item \code{cABEC}: cABEC age
+\item \code{PipekElasticNet}: PipekElasticNet age
+\item \code{PipekFilteredh}:  PipekFilteredh age
+\item \code{PipekRetrainedh}:  PipekRetrainedh age
+\item \code{WuClock}:  WuClock age
 \item \code{PCClocks}: (If requested) A data.frame containing the original \code{Sample_ID}, \code{Age}, and \code{Female} columns, appended with 14 new columns for the calculated PC clock values (including \code{PCHorvath2013}, \code{PCPhenoAge}, \code{PCDNAmTL}, etc.).
 \item \code{SystemsAge}: (If requested) A data.frame where the first column is \code{Sample_ID} and the subsequent 13 columns contain the calculated scores
 \item \code{DNAmFitAge}: (If requested) A single data.frame containing DNAmFitAge, FitAgeAccel, and all 6 related fitness biomarkers.
@@ -167,6 +174,13 @@ CpG set to minimize technical noise and improve reliability
 \item \code{PedBE}: (McEwen et al. 2019) Pediatric buccal epithelial clock in Children.
 \item \code{CentenarianClock}: (Eric Dec et al. 2023) Centenarian Epigenetic Clocks.
 \item \code{Retro_age}: (Ndhlovu et al. 2024) Retroelement-based clock developed on the EPIC v1/v2 arrays.
+\item \code{ABEC}: (Lee et al. 2020) Adult Blood-based EPIC Clock.
+\item \code{eABEC}: (Lee et al. 2020) Extended Adult Blood-based EPIC Clock.
+\item \code{cABEC}: (Lee et al. 2020) Common Adult Blood-based EPIC Clock.
+\item \code{PipekElasticNet}: (Pipek et al. 2023) Pipek's Multi-tissue Elastic Net Epigenetic Clock (239 CpGs).
+\item \code{PipekFilteredh}: (Pipek et al. 2023) Pipek's Filtered Horvath Epigenetic Clock (272 CpGs).
+\item \code{PipekRetrainedh}: (Pipek et al. 2023) Pipek's Retrained Horvath Epigenetic Clock (308 CpGs).
+\item \code{WuClock}: (Wu et al. 2019) Wu's Epigenetic Clock for Pediatric Age Estimation.
 \item \code{PCHorvath2013}, \code{PCHorvath2018}, \code{PCHannum}: (Higgins-Chen et al. 2022)
 Computationally-bolstered versions of the original clocks. These "PC clocks"
 are retrained using principal components (PCs) derived from a large
@@ -326,6 +340,18 @@ DNA methylation-based estimator of telomere length
 Tong H, Guo X, Jacques M, Luo Q, Eynon N, Teschendorff AE.
 Cell-type specific epigenetic clocks to quantify biological age at cell-type resolution.
 \emph{Aging} 2024
+
+Lee, Y., Haftorn, K.L., Denault, W.R.P. et al.
+Blood-based epigenetic estimators of chronological age in human adults using DNA methylation data from the Illumina MethylationEPIC array.
+\emph{BMC Genomics} 2020
+
+Pipek, O.A., Csabai, I.
+A revised multi-tissue, multi-platform epigenetic clock model for methylation array data.
+\emph{J Math Chem} 2023
+
+Wu, Xiaohui et al.
+DNA methylation profile is a quantitative measure of biological aging in children
+\emph{Aging} 2019
 }
 \seealso{
 \code{listEpiAge()}
@@ -341,5 +367,6 @@ Cell-type specific epigenetic clocks to quantify biological age at cell-type res
 \code{Horvath2018()}, \code{Bernabeu_cAge()}, \code{CorticalClock()}, \code{PedBE()},
 \code{CentenarianClock()}, \code{Retro_age()},
 \code{Zhang10()}, \code{PhenoAge()}, \code{DunedinPACE()}, \code{GrimAge1()}, \code{GrimAge2()},
-\code{IC_Clock()}, \code{CausalClock()}, \code{CausalClock()}.
+\code{IC_Clock()}, \code{CausalClock()}, \code{CausalClock()},\code{ABEC()},\code{eABEC()},\code{cABEC()},
+\code{PipekElasticNet()},\code{PipekFilteredh()},\code{PipekRetrainedh()},\code{WuClock()}.
 }

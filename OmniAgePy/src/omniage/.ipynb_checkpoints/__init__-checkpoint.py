@@ -10,7 +10,7 @@ from .models import (
     Zhang10, PhenoAge, DunedinPACE, GrimAge1, GrimAge2, DNAmFitAge, IC_Clock,
     EpiTOC1, EpiTOC2, EpiTOC3, StemTOC, StemTOCvitro, RepliTali, HypoClock, EpiCMIT_Hypo,
     EpiCMIT_Hyper,DNAmTL, PCHorvath2013, PCHorvath2018, PCHannum, PCPhenoAge, PCDNAmTL, PCGrimAge1,
-    
+    ABEC, eABEC, cABEC, PipekElasticNet, PipekFilteredh, PipekRetrainedh, WuClock,
     # --- Causal / Stochastic ---
     CausalAge, DamAge, AdaptAge, StocH, StocP, StocZ,
     
@@ -33,7 +33,10 @@ from .models import (
     
     # --- Gestational & CTF ---
     BohlinGA, EPICGA, LeeControl,LeeRobust,LeeRefinedRobust, KnightGA, MayneGA,
-    DNAmCTFClock
+    DNAmCTFClock,
+
+    # --- Disease Risk ---
+    CompSmokeIndex
 )
 
 
@@ -46,6 +49,7 @@ __all__ = [
     "Horvath2013", "Hannum", "Lin", "VidalBralo", "ZhangClock", "Horvath2018", 
     "Bernabeu_cAge", "CorticalClock", "PedBE", "CentenarianClock_40", "CentenarianClock_100",
     "Retro_age_V1", "Retro_age_V2",
+    "ABEC","eABEC","cABEC","PipekElasticNet","PipekFilteredh","PipekRetrainedh","WuClock",
     "Zhang10", "PhenoAge", "DunedinPACE", "GrimAge1", "GrimAge2", "DNAmFitAge", "IC_Clock",
     "EpiTOC1", "EpiTOC2", "EpiTOC3", "StemTOC", "StemTOCvitro", "RepliTali", "HypoClock", "EpiCMIT_Hypo",
     "EpiCMIT_Hyper","DNAmTL","PCHorvath2013", "PCHorvath2018", "PCHannum", "PCPhenoAge", "PCDNAmTL", "PCGrimAge1",
@@ -67,5 +71,5 @@ __all__ = [
     "PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin",
     "EnsembleAgeHumanMouse","EnsembleAgeStatic","EnsembleAgeDynamic",
     "BohlinGA", "EPICGA", "LeeControl","LeeRobust","LeeRefinedRobust", "KnightGA", "MayneGA",
-    "DNAmCTFClock"
+    "DNAmCTFClock","CompSmokeIndex"
 ]

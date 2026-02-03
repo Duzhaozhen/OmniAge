@@ -24,7 +24,9 @@ listEpiAge <- function() {
 
   chronological_clocks <- c("Horvath2013", "Hannum","Lin","VidalBralo","ZhangClock",
                             "Horvath2018","Bernabeu_cAge","CorticalClock","PedBE",
-                            "CentenarianClock","Retro_age","PCHorvath2013","PCHorvath2018","PCHannum")
+                            "CentenarianClock","Retro_age","ABEC","eABEC","cABEC",
+                            "PipekElasticNet","PipekFilteredh","PipekRetrainedh","WuClock",
+                            "PCHorvath2013","PCHorvath2018","PCHannum")
 
   biological_clocks <- c("Zhang10","PhenoAge", "DunedinPACE", "GrimAge1","GrimAge2","PCPhenoAge","PCGrimAge1","DNAmFitAge"
                          ,"IC_Clock","SystemsAge")
@@ -203,6 +205,13 @@ listEpiGA <- function() {
 #' * `PedBE`: (McEwen et al. 2019) Pediatric buccal epithelial clock in Children.
 #' * `CentenarianClock`: (Eric Dec et al. 2023) Centenarian Epigenetic Clocks.
 #' * `Retro_age`: (Ndhlovu et al. 2024) Retroelement-based clock developed on the EPIC v1/v2 arrays.
+#' * `ABEC`: (Lee et al. 2020) Adult Blood-based EPIC Clock.
+#' * `eABEC`: (Lee et al. 2020) Extended Adult Blood-based EPIC Clock.
+#' * `cABEC`: (Lee et al. 2020) Common Adult Blood-based EPIC Clock.
+#' * `PipekElasticNet`: (Pipek et al. 2023) Pipek's Multi-tissue Elastic Net Epigenetic Clock (239 CpGs).
+#' * `PipekFilteredh`: (Pipek et al. 2023) Pipek's Filtered Horvath Epigenetic Clock (272 CpGs).
+#' * `PipekRetrainedh`: (Pipek et al. 2023) Pipek's Retrained Horvath Epigenetic Clock (308 CpGs).
+#' * `WuClock`: (Wu et al. 2019) Wu's Epigenetic Clock for Pediatric Age Estimation.
 #' * `PCHorvath2013`, `PCHorvath2018`, `PCHannum`: (Higgins-Chen et al. 2022)
 #' Computationally-bolstered versions of the original clocks. These "PC clocks"
 #' are retrained using principal components (PCs) derived from a large
@@ -263,6 +272,13 @@ listEpiGA <- function() {
 #' * `GrimAge2`: A data.frame (Sample, Age, Female, DNAm..., DNAmGrimAge2).
 #' * `CausalClock`: A list (Causal, Damage, Adaptation scores).
 #' * `IC_Clock`: The Intrinsic Capacity (IC) score
+#' * `ABEC`: ABEC age.
+#' * `eABEC`: eABEC age.
+#' * `cABEC`: cABEC age
+#' * `PipekElasticNet`: PipekElasticNet age
+#' * `PipekFilteredh`:  PipekFilteredh age
+#' * `PipekRetrainedh`:  PipekRetrainedh age
+#' * `WuClock`:  WuClock age
 #' * `PCClocks`: (If requested) A data.frame containing the original `Sample_ID`, `Age`, and `Female` columns, appended with 14 new columns for the calculated PC clock values (including `PCHorvath2013`, `PCPhenoAge`, `PCDNAmTL`, etc.).
 #' * `SystemsAge`: (If requested) A data.frame where the first column is `Sample_ID` and the subsequent 13 columns contain the calculated scores
 #' * `DNAmFitAge`: (If requested) A single data.frame containing DNAmFitAge, FitAgeAccel, and all 6 related fitness biomarkers.
@@ -282,7 +298,8 @@ listEpiGA <- function() {
 #' `Horvath2018()`, `Bernabeu_cAge()`, `CorticalClock()`, `PedBE()`,
 #' `CentenarianClock()`, `Retro_age()`,
 #' `Zhang10()`, `PhenoAge()`, `DunedinPACE()`, `GrimAge1()`, `GrimAge2()`,
-#' `IC_Clock()`, `CausalClock()`, `CausalClock()`.
+#' `IC_Clock()`, `CausalClock()`, `CausalClock()`,`ABEC()`,`eABEC()`,`cABEC()`, 
+#' `PipekElasticNet()`,`PipekFilteredh()`,`PipekRetrainedh()`,`WuClock()`.
 #'
 #'
 #'
@@ -382,16 +399,26 @@ listEpiGA <- function() {
 #' DNAmFitAge: biological age indicator incorporating physical fitness.
 #' \emph{Aging} 2023
 #'
-#' @references
 #' Lu AT, Seeboth A, Tsai PC, et al.
 #' DNA methylation-based estimator of telomere length
 #' \emph{Aging} 2019
 #'
-#' @references
 #' Tong H, Guo X, Jacques M, Luo Q, Eynon N, Teschendorff AE.
 #' Cell-type specific epigenetic clocks to quantify biological age at cell-type resolution.
 #' \emph{Aging} 2024
 #'
+#' Lee, Y., Haftorn, K.L., Denault, W.R.P. et al.
+#' Blood-based epigenetic estimators of chronological age in human adults using DNA methylation data from the Illumina MethylationEPIC array. 
+#' \emph{BMC Genomics} 2020
+#'
+#' Pipek, O.A., Csabai, I.
+#' A revised multi-tissue, multi-platform epigenetic clock model for methylation array data. 
+#' \emph{J Math Chem} 2023
+#' 
+#' Wu, Xiaohui et al. 
+#' DNA methylation profile is a quantitative measure of biological aging in children
+#' \emph{Aging} 2019
+#' 
 #' @examples
 #' download_OmniAgeR_example("LungInv")
 #' load_OmniAgeR_example("LungInv")
@@ -435,6 +462,8 @@ EpiAge <- function(data.m, clock_names = "all", ages.v=NULL, sex.v=NULL,
 
   chronological_clocks <- c("Horvath2013", "Hannum","Lin","VidalBralo","ZhangClock",
                             "Horvath2018","Bernabeu_cAge","CorticalClock","PedBE",
+                            "ABEC","eABEC","cABEC","PipekElasticNet",
+                            "PipekFilteredh","PipekRetrainedh","WuClock",
                             "CentenarianClock","Retro_age","PCHorvath2013","PCHorvath2018","PCHannum")
 
   biological_clocks <- c("Zhang10","PhenoAge", "DunedinPACE", "GrimAge1","GrimAge2","PCPhenoAge","PCGrimAge1","DNAmFitAge"
@@ -810,7 +839,13 @@ EpiAge <- function(data.m, clock_names = "all", ages.v=NULL, sex.v=NULL,
   if ("PedBE" %in% clocks_to_run) { results.ls$PedBE <- PedBE(data.m) }
   if ("CentenarianClock" %in% clocks_to_run) { results.ls$CentenarianClock <- CentenarianClock(data.m) }
   if ("Retro_age" %in% clocks_to_run) { results.ls$Retro_age <- Retro_age(data.m,version="V2") }
-
+  if ("ABEC" %in% clocks_to_run) { results.ls$ABEC <- ABEC(data.m) }
+  if ("eABEC" %in% clocks_to_run) { results.ls$eABEC <- eABEC(data.m) }
+  if ("cABEC" %in% clocks_to_run) { results.ls$cABEC <- cABEC(data.m) }
+  if ("PipekElasticNet" %in% clocks_to_run) { results.ls$PipekElasticNet <- PipekElasticNet(data.m) }
+  if ("PipekFilteredh" %in% clocks_to_run) { results.ls$PipekFilteredh <- PipekFilteredh(data.m) }
+  if ("PipekRetrainedh" %in% clocks_to_run) { results.ls$PipekRetrainedh <- PipekRetrainedh(data.m) }
+  if ("WuClock" %in% clocks_to_run) { results.ls$WuClock <- WuClock(data.m) }
 
   # --- Biological Clock Calculations ---
   if ("Zhang10" %in% clocks_to_run) { results.ls$Zhang10 <- Zhang10(data.m) }

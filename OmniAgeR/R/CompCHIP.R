@@ -1,4 +1,4 @@
-#' Calculate CHIP-related Methylation Scores
+#' @title Calculate CHIP-related Methylation Scores
 #'
 #' @description
 #' Computes CHIP (Clonal Hematopoiesis of Indeterminate Potential) scores

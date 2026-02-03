@@ -14,6 +14,8 @@ OmniAgePy/dist/
 # 忽略解压后的原始 PMML 大家伙
 OmniAgePy/src/omniage/data/*.pmml
 
+# 忽略 Jupyter 产生的检查点
+.ipynb_checkpoints/
 # --- 存储与示例数据 (外部托管) ---
 # 忽略整个 Python 示例文件夹
 OmniAgePy/example/
@@ -22,3 +24,4 @@ OmniAgePy/example/
 .DS_Store
 .vscode/
 .idea/
+.Rproj.user

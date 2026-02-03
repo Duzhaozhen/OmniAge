@@ -13,6 +13,7 @@ AVAILABLE_CLOCK_GROUPS = {
         "Horvath2013", "Hannum", "Lin", "VidalBralo", "ZhangClock",
         "Horvath2018", "Bernabeu_cAge", "CorticalClock", "PedBE",
         "CentenarianClock_40", "CentenarianClock_100", "Retro_age_V1", "Retro_age_V2",
+        "ABEC","eABEC","cABEC","PipekElasticNet","PipekFilteredh","PipekRetrainedh","WuClock",
         "PCHorvath2013","PCHorvath2018","PCHannum",
     ],  
     "Biological": [
@@ -34,6 +35,7 @@ AVAILABLE_CLOCK_GROUPS = {
                   "McCartneyWHR", "McCartneyBodyFat"],
     "Gestational":["BohlinGA", "EPICGA", "KnightGA","MayneGA","LeeControl","LeeRobust","LeeRefinedRobust"],
     "Surrogate_Biomarkers":["CompCRP","CompCHIP","EpiScores","CompIL6"],
+    "Disease_Risk":["CompSmokeIndex"],
     "Cross_Species": ["PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin","EnsembleAgeHumanMouse", "EnsembleAgeStatic", "EnsembleAgeDynamic"],
 }
 
@@ -122,6 +124,7 @@ CLOCK_GROUPS = {
         "Horvath2013", "Hannum", "Lin", "VidalBralo", "ZhangClock",
         "Horvath2018", "Bernabeu_cAge", "CorticalClock", "PedBE",
         "CentenarianClock_40", "CentenarianClock_100", "Retro_age_V1", "Retro_age_V2",
+        "ABEC","eABEC","cABEC","PipekElasticNet","PipekFilteredh","PipekRetrainedh","WuClock",
         "PCHorvath2013","PCHorvath2018","PCHannum",
     ],  
     "Biological": [
@@ -142,6 +145,7 @@ CLOCK_GROUPS = {
                   "McCartneyWHR", "McCartneyBodyFat"],
     "Gestational":["BohlinGA", "EPICGA", "KnightGA","MayneGA","LeeControl","LeeRobust","LeeRefinedRobust"],
     "Surrogate_Biomarkers":["CompCRP","CompCHIP","EpiScores","CompIL6"],
+    "Disease_Risk":["CompSmokeIndex"],
     "Cross_Species": [
         "PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin",
         "EnsembleAgeHumanMouse", "EnsembleAgeStatic", "EnsembleAgeDynamic"
@@ -527,6 +531,7 @@ ALL_CLOCK_GROUPS = {
         "Horvath2013", "Hannum", "Lin", "VidalBralo", "ZhangClock",
         "Horvath2018", "Bernabeu_cAge", "CorticalClock", "PedBE",
         "CentenarianClock_40", "CentenarianClock_100", "Retro_age_V1", "Retro_age_V2",
+        "ABEC","eABEC","cABEC","PipekElasticNet","PipekFilteredh","PipekRetrainedh","WuClock",
         "PCHorvath2013","PCHorvath2018","PCHannum",
     ],  
     "Biological": [
@@ -547,6 +552,7 @@ ALL_CLOCK_GROUPS = {
                   "McCartneyWHR", "McCartneyBodyFat"],
     "Gestational":["BohlinGA", "EPICGA", "KnightGA","MayneGA","LeeControl","LeeRobust","LeeRefinedRobust"],
     "Surrogate_Biomarkers":["CompCRP","CompCHIP","EpiScores","CompIL6"],
+    "Disease_Risk":["CompSmokeIndex"],
     "Cross_Species": ["PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin","EnsembleAgeHumanMouse","EnsembleAgeStatic","EnsembleAgeDynamic"], #Future can include"
     "EnsembleAge": ["EnsembleAgeHumanMouse","EnsembleAgeStatic","EnsembleAgeDynamic"],
     "PCClocks": ["PCHorvath2013", "PCHorvath2018", "PCHannum",

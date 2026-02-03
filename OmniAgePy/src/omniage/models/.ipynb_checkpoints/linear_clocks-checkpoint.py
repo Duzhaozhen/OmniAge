@@ -2190,6 +2190,324 @@ class StocP(BaseLinearClock):
 
 
 
+class ABEC(BaseLinearClock):
+    """
+    Adult Blood-based EPIC Clock (ABEC)
+    
+    References:
+        Lee et al. Blood-based epigenetic estimators of chronological age in human adults using DNA methylation data from the Illumina MethylationEPIC array. 
+        BMC Genomics (2020) https://doi.org/10.1186/s12864-020-07168-8
+    """
+    METADATA = {
+        "year": 2020,
+        "species": "Human",
+        "tissue": "Blood",
+        "omic type": "DNAm(EPIC)",
+        "prediction": "chronological age(years)",
+        "source": "https://doi.org/10.1186/s12864-020-07168-8"
+    }
+    
+    def __init__(self, coef_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize the ABEC model.
+        
+        Args:
+            coef_df: Optional DataFrame containing model coefficients.
+                If None, the default 'ABEC.csv' will be loaded from the package data.
+        """
+        # 1. Automatic loading logic
+        if coef_df is None:
+            coef_df = load_clock_coefs("ABEC")
+            
+        # 2. Invoke base class initialization
+        super().__init__(coef_df, name="ABEC",metadata=self.METADATA)
+
+
+
+class eABEC(BaseLinearClock):
+    """
+    Extended Adult Blood-based EPIC Clock (eABEC)
+    
+    References:
+        Lee et al. Blood-based epigenetic estimators of chronological age in human adults using DNA methylation data from the Illumina MethylationEPIC array. 
+        BMC Genomics (2020) https://doi.org/10.1186/s12864-020-07168-8
+    """
+    METADATA = {
+        "year": 2020,
+        "species": "Human",
+        "tissue": "Blood",
+        "omic type": "DNAm(EPIC)",
+        "prediction": "chronological age(years)",
+        "source": "https://doi.org/10.1186/s12864-020-07168-8"
+    }
+    
+    def __init__(self, coef_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize the eABEC model.
+        
+        Args:
+            coef_df: Optional DataFrame containing model coefficients.
+                If None, the default 'eABEC.csv' will be loaded from the package data.
+        """
+        # 1. Automatic loading logic
+        if coef_df is None:
+            coef_df = load_clock_coefs("eABEC")
+            
+        # 2. Invoke base class initialization
+        super().__init__(coef_df, name="eABEC",metadata=self.METADATA)
+
+
+class cABEC(BaseLinearClock):
+    """
+    Common Adult Blood-based EPIC Clock (ABEC)
+    
+    References:
+        Lee et al. Blood-based epigenetic estimators of chronological age in human adults using DNA methylation data from the Illumina MethylationEPIC array. 
+        BMC Genomics (2020) https://doi.org/10.1186/s12864-020-07168-8
+    """
+    METADATA = {
+        "year": 2020,
+        "species": "Human",
+        "tissue": "Blood",
+        "omic type": "DNAm(450K/EPIC)",
+        "prediction": "chronological age(years)",
+        "source": "https://doi.org/10.1186/s12864-020-07168-8"
+    }
+    
+    def __init__(self, coef_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize the cABEC model.
+        
+        Args:
+            coef_df: Optional DataFrame containing model coefficients.
+                If None, the default 'cABEC.csv' will be loaded from the package data.
+        """
+        # 1. Automatic loading logic
+        if coef_df is None:
+            coef_df = load_clock_coefs("cABEC")
+            
+        # 2. Invoke base class initialization
+        super().__init__(coef_df, name="cABEC",metadata=self.METADATA)
+
+
+
+class PipekElasticNet(BaseLinearClock):
+    """
+    Pipek's Multi-tissue Elastic Net Epigenetic Clock (239 CpGs)
+    Attributes:
+        intercept (float): Model offset.
+        weights (pd.Series): Coefficients for the 239 CpGs.
+
+    References:
+        Pipek, O.A., Csabai, I. A revised multi-tissue, multi-platform epigenetic clock model for methylation array data. 
+        J Math Chem (2023). https://doi.org/10.1007/s10910-022-01381-4
+    """
+    METADATA = {
+        "year": 2023,
+        "species": "Human",
+        "tissue": "Multi-tissue",
+        "omic type": "DNAm(27K/450K/EPIC)",
+        "prediction": "chronological age(years)",
+        "source": "https://doi.org/10.1007/s10910-022-01381-4"
+    }
+
+    def __init__(self, coef_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize the PipekElasticNet model.
+        
+        Args:
+            coef_df: Optional DataFrame containing model coefficients (CpG IDs and weights).
+                If None, the default 'PipekElasticNet.csv' will be loaded from the package data.
+        """
+        # 1. Automatic loading logic
+        if coef_df is None:
+            # Attempts to locate 'PipekElasticNet.csv' within the internal data directory
+            coef_df = load_clock_coefs("PipekElasticNet")
+            
+        # 2. Initialize the base class
+        super().__init__(coef_df, name="PipekElasticNet",metadata=self.METADATA)
+
+    def postprocess(self, linear_predictor):
+        """
+        Implements the inverse transformation (Anti-log).
+        """
+        adult_age = 20
+        
+        # Formula for adults (linear)
+        adult_transform = linear_predictor * (adult_age + 1) + adult_age
+        
+        # Formula for childhood (exponential)
+        child_transform = np.exp(linear_predictor + np.log(adult_age + 1)) - 1
+        
+        # Vectorized conditional logic
+        return np.where(linear_predictor > 0, adult_transform, child_transform)
+
+
+
+
+
+class PipekFilteredh(BaseLinearClock):
+    """
+    Pipek's Filtered Horvath Epigenetic Clock (272 CpGs)
+    Attributes:
+        intercept (float): Model offset.
+        weights (pd.Series): Coefficients for the 272 CpGs.
+
+    References:
+        Pipek, O.A., Csabai, I. A revised multi-tissue, multi-platform epigenetic clock model for methylation array data. 
+        J Math Chem (2023). https://doi.org/10.1007/s10910-022-01381-4
+    """
+    METADATA = {
+        "year": 2023,
+        "species": "Human",
+        "tissue": "Multi-tissue",
+        "omic type": "DNAm(27K/450K/EPIC)",
+        "prediction": "chronological age(years)",
+        "source": "https://doi.org/10.1007/s10910-022-01381-4"
+    }
+
+    def __init__(self, coef_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize the PipekFilteredh model.
+        
+        Args:
+            coef_df: Optional DataFrame containing model coefficients (CpG IDs and weights).
+                If None, the default 'PipekElasticNet.csv' will be loaded from the package data.
+        """
+        # 1. Automatic loading logic
+        if coef_df is None:
+            # Attempts to locate 'PipekFilteredh.csv' within the internal data directory
+            coef_df = load_clock_coefs("PipekFilteredh")
+            
+        # 2. Initialize the base class
+        super().__init__(coef_df, name="PipekFilteredh",metadata=self.METADATA)
+
+    def postprocess(self, linear_predictor):
+        """
+        Implements the inverse transformation (Anti-log).
+        """
+        adult_age = 20
+        
+        # Formula for adults (linear)
+        adult_transform = linear_predictor * (adult_age + 1) + adult_age
+        
+        # Formula for childhood (exponential)
+        child_transform = np.exp(linear_predictor + np.log(adult_age + 1)) - 1
+        
+        # Vectorized conditional logic
+        return np.where(linear_predictor > 0, adult_transform, child_transform)
+
+    
+
+class PipekRetrainedh(BaseLinearClock):
+    """
+     Pipek's Retrained Horvath Epigenetic Clock (308 CpGs)
+    Attributes:
+        intercept (float): Model offset.
+        weights (pd.Series): Coefficients for the 308 CpGs.
+
+    References:
+        Pipek, O.A., Csabai, I. A revised multi-tissue, multi-platform epigenetic clock model for methylation array data. 
+        J Math Chem (2023). https://doi.org/10.1007/s10910-022-01381-4
+    """
+    METADATA = {
+        "year": 2023,
+        "species": "Human",
+        "tissue": "Multi-tissue",
+        "omic type": "DNAm(27K/450K/EPIC)",
+        "prediction": "chronological age(years)",
+        "source": "https://doi.org/10.1007/s10910-022-01381-4"
+    }
+
+    def __init__(self, coef_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize the PipekRetrainedh model.
+        
+        Args:
+            coef_df: Optional DataFrame containing model coefficients (CpG IDs and weights).
+                If None, the default 'PipekRetrainedh.csv' will be loaded from the package data.
+        """
+        # 1. Automatic loading logic
+        if coef_df is None:
+            # Attempts to locate 'PipekRetrainedh.csv' within the internal data directory
+            coef_df = load_clock_coefs("PipekRetrainedh")
+            
+        # 2. Initialize the base class
+        super().__init__(coef_df, name="PipekRetrainedh",metadata=self.METADATA)
+
+    def postprocess(self, linear_predictor):
+        """
+        Implements the inverse transformation (Anti-log).
+        """
+        adult_age = 20
+        
+        # Formula for adults (linear)
+        adult_transform = linear_predictor * (adult_age + 1) + adult_age
+        
+        # Formula for childhood (exponential)
+        child_transform = np.exp(linear_predictor + np.log(adult_age + 1)) - 1
+        
+        # Vectorized conditional logic
+        return np.where(linear_predictor > 0, adult_transform, child_transform)
+
+
+
+
+class WuClock(BaseLinearClock):
+    """
+      Wu's Epigenetic Clock for Pediatric Age Estimation
+    Attributes:
+        intercept (float): Model offset.
+        weights (pd.Series): Coefficients for the 111 CpGs.
+
+    References:
+        Wu, Xiaohui et al. DNA methylation profile is a quantitative measure of biological aging in children.
+        Aging (2019). https://doi.org/10.18632/aging.102399
+    """
+    METADATA = {
+        "year": 2019,
+        "species": "Human",
+        "tissue": "Blood",
+        "omic type": "DNAm(27K/450K)",
+        "prediction": "chronological age(years)",
+        "source": "https://doi.org/10.18632/aging.102399"
+    }
+
+    def __init__(self, coef_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize the WuClock model.
+        
+        Args:
+            coef_df: Optional DataFrame containing model coefficients (CpG IDs and weights).
+                If None, the default 'WuClock.csv' will be loaded from the package data.
+        """
+        # 1. Automatic loading logic
+        if coef_df is None:
+            # Attempts to locate 'WuClock.csv' within the internal data directory
+            coef_df = load_clock_coefs("WuClock")
+            
+        # 2. Initialize the base class
+        super().__init__(coef_df, name="WuClock",metadata=self.METADATA)
+
+    def postprocess(self, linear_predictor):
+        """
+        Implements the inverse transformation (Anti-log).
+        """
+        adult_age = 48
+        
+        # Formula for adults (linear)
+        adult_transform = linear_predictor * (adult_age + 1) + adult_age
+        
+        # Formula for childhood (exponential)
+        child_transform = np.exp(linear_predictor + np.log(adult_age + 1)) - 1
+
+        
+        # Vectorized conditional logic, Divide by 12 to change the month to the year
+        return np.where(linear_predictor > 0, adult_transform, child_transform)/12
+
+
+
+
 
 class BaseMcCartneyClock(BaseLinearClock):
     """

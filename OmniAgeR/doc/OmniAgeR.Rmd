@@ -45,6 +45,13 @@ These DNAm clocks are designed for the prediction of chronological age.
 -   `PedBE`: (McEwen et al. 2019) Pediatric buccal epithelial clock for children.
 -   `CentenarianClock`: (Eric Dec et al. 2023) Centenarian Epigenetic Clocks.
 -   `Retro_age`: (Ndhlovu et al. 2024) Retroelement-based clock developed on the EPIC v1/v2 arrays.
+-   `ABEC`: (Lee et al. 2020) Adult Blood-based EPIC Clock.
+-   `eABEC`: (Lee et al. 2020) Extended Adult Blood-based EPIC Clock.
+-   `cABEC`: (Lee et al. 2020) Common Adult Blood-based EPIC Clock.
+-   `PipekElasticNet`: (Pipek et al. 2023) Pipek's Multi-tissue Elastic Net Epigenetic Clock (239 CpGs).
+-   `PipekFilteredh`: (Pipek et al. 2023) Pipek's Filtered Horvath Epigenetic Clock (272 CpGs).
+-   `PipekRetrainedh`: (Pipek et al. 2023) Pipek's Retrained Horvath Epigenetic Clock (308 CpGs).
+-   `WuClock`: (Wu et al. 2019) Wu's Epigenetic Clock for Pediatric Age Estimation.
 -   `PCHorvath2013`, `PCHorvath2018`, `PCHannum`: (Higgins-Chen et al. 2022) Computationally-bolstered versions of the original clocks. These "PC clocks" are retrained using principal components (PCs) derived from a large CpG set to minimize technical noise and improve reliability
 
 ## Biological Age Clocks
@@ -136,6 +143,12 @@ Besides, `OmniAgeR` includes functions to compute several other important surrog
 -   `CompEpiScores`: Computes the 109 validated epigenetic scores (EpiScores) that serve as DNA methylation-based proxies for the levels of circulating plasma proteins as defined by Gadd et al. (2022).
 -   `McCartney_Trait`: Computes epigenetic surrogate scores for 10 different complex traits and biomarkers based on blood methylation models. Traits include: `BMI`, `Smoking` (pack-years), `Alcohol` (units/week), `Education` (years), `Total_cholesterol`, `HDL_cholesterol`, `LDL_cholesterol`, `Total_HDL_ratio`, `WHR` (Waist-to-Hip Ratio), and `Body_fat_Perc`.
 
+# Disease Risk Prediction
+
+`OmniAgeR` includes a function to calculate the DNA methylation-based smoking index using 1,501 smoking-associated CpG sites. This score correlates with cancer risk across multiple tissues and provides a robust epigenetic signature of smoking exposure.
+
+-   `CompSmokeIndex`: Computes a DNAm-based Smoking Index that correlates with cancer risk across various tissues.
+
 # DNA Methylation Cell-Type Fraction
 
 The OmniAgeR package also provides a DNA Methylation Cell-Type Fraction (CTF) clock (implemented as `DNAm_CTF_Clock`), which was trained on a large-scale NSPT dataset comprising more than 3,500 blood samples. The clock incorporates 12 immune cell types, estimated using the EpiDISH algorithm, to model aging based on cell-type composition.
@@ -157,6 +170,13 @@ The OmniAgeR package also provides a DNA Methylation Cell-Type Fraction (CTF) cl
 | `PedBE` | Chronological | `EpiAge()`,`PedBE()` |
 | `CentenarianClock` | Chronological | `EpiAge()`,`CentenarianClock()` |
 | `Retro_age` | Chronological | `EpiAge()`,`Retro_age()` |
+| `ABEC` | Chronological | `EpiAge()`,`ABEC()` |
+| `eABEC` | Chronological | `EpiAge()`,`eABEC()` |
+| `cABEC` | Chronological | `EpiAge()`,`cABEC()` |
+| `PipekElasticNet` | Chronological | `EpiAge()`,`PipekElasticNet()` |
+| `PipekFilteredh` | Chronological | `EpiAge()`,`PipekFilteredh()` |
+| `PipekRetrainedh` | Chronological | `EpiAge()`,`PipekRetrainedh()` |
+| `WuClock` | Chronological | `EpiAge()`,`WuClock()` |
 | `Zhang10` | Biological | `EpiAge()`,`Zhang10()` |
 | `PhenoAge` | Biological | `EpiAge()`,`PhenoAge()` |
 | `DunedinPACE` | Biological | `EpiAge()`,`DunedinPACE()` |
@@ -186,7 +206,7 @@ The OmniAgeR package also provides a DNA Methylation Cell-Type Fraction (CTF) cl
 | `PanMammalianClocks` | PanMammalian | `UniversalPanMammalianClocks()` |
 | `PanMammalianBlood` | PanMammalian | `PanMammalianBlood()` |
 | `PanMammalianSkin` | PanMammalian | `PanMammalianSkin()` |
- `DNAm_CTF_Clock` | Cell-Type Fraction Clock | `DNAm_CTF_Clock()` |
+| `DNAm_CTF_Clock` | Cell-Type Fraction Clock | `DNAm_CTF_Clock()` |
 
 
 ## Transcriptomic Clocks
@@ -205,6 +225,7 @@ The OmniAgeR package also provides a DNA Methylation Cell-Type Fraction (CTF) cl
 | `CompCHIP` | CHIP score | `CompCHIP()` |
 | `CompIL6` | IL6 score | `CompIL6()` |
 | `CompEpiScores` | 109 validated epigenetic scores | `CompEpiScores()` |
+| `CompSmokeIndex` | Smoking Index | `CompSmokeIndex()` |
 | `McCartney_Trait` | Epigenetic surrogate scores for 10 different complex traits | `McCartney_Trait()` |
 
 
