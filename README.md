@@ -1,9 +1,23 @@
+<p align="center">
+  <img src="assets/OmniAge_logo.png" alt="OmniAge Graphical Abstract" width="700">
+</p>
 
-# OmniAge 🧬 
+<h1 align="center">OmniAge 🧬</h1>
 
-**OmniAge** is a cross-platform computational suite designed for the robust estimation and analysis of biological aging biomarkers. It provides a unified framework supporting both **R** and **Python**, integrating a vast suite of aging clocks and biomarkers.
+<p align="center">
+    <strong>A cross-platform computational suite for biological aging biomarkers.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Duzhaozhen/OmniAge/stargazers"><img src="https://img.shields.io/github/stars/Duzhaozhen/OmniAge" alt="Stars"></a>
+  <a href="https://github.com/Duzhaozhen/OmniAge/issues"><img src="https://img.shields.io/github/issues/Duzhaozhen/OmniAge" alt="Issues"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Duzhaozhen/OmniAge" alt="License"></a>
+</p>
 
 ---
+
+**OmniAge** is a cross-platform computational suite designed for the robust estimation and analysis of biological aging biomarkers. It provides a unified framework supporting both **R** and **Python**, integrating a vast suite of aging clocks and biomarkers (including Epigenetic, Transcriptomic, Mitotic, and more).
+
 
 ## 📂 Repository Structure (Monorepo)
 
