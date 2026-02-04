@@ -75,10 +75,10 @@ EpiAge.o<-EpiAge(data.m = bmiq.m,clock_names = "mitotic",ages.v = df$Age)
 We provide step-by-step guides to help you get started with OmniAge:
 
 ### Python (omniage)
-* [Python Package Tutorial](tutorial/OmniAgePy_tutorial.pdf) - Comprehensive guide for the Python-based workflow
+* [Python Package Tutorial](tutorial/OmniAgePy_tutorial.html) - Comprehensive guide for the Python-based workflow
 
 ### R (OmniAgeR)
-* [R Package Tutorial](tutorial/OmniAgeR_tutorial.pdf) - Comprehensive guide for the R-based workflow.
+* [R Package Tutorial](tutorial/OmniAgeR_tutorial.html) - Comprehensive guide for the R-based workflow.
 
 ---
 
