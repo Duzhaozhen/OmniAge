@@ -76,10 +76,19 @@ mitotic_ages = omniage.cal_epimarker(beta_df, clocks="Mitotic",ages=meta_df['Age
 ### R API
 ```r
 library(OmniAgeR)
+lungInv <- loadOmniAgeRdata(
+    "omniager_lung_inv",
+    verbose = FALSE
+)
+lungInvM <- lungInv$bmiq_m
+phenoDf <- lungInv$PhenoTypes
 
-download_OmniAgeR_example("LungInv")
-load_OmniAgeR_example("LungInv")
-EpiAge.o<-EpiAge(data.m = bmiq.m,clock_names = "mitotic",ages.v = df$Age)
+epiMarkerRes <- epiMarker(
+    betaM = lungInvM,
+    clockNames = "mitotic",
+    chronAge = phenoDf$Age,
+)
+
 ```
 
 ---
