@@ -76,13 +76,18 @@ mitotic_ages = omniage.cal_epimarker(beta_df, clocks="Mitotic",ages=meta_df['Age
 ### R API
 ```r
 library(OmniAgeR)
+
+# Load the lung methylation dataset
 lungInv <- loadOmniAgeRdata(
     "omniager_lung_inv",
     verbose = FALSE
 )
+
+#Extract methylation matrix and phenotype data
 lungInvM <- lungInv$bmiq_m
 phenoDf <- lungInv$PhenoTypes
 
+#Calculate the epigenetic clock
 epiMarkerRes <- epiMarker(
     betaM = lungInvM,
     clockNames = "mitotic",
