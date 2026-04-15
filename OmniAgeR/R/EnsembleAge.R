@@ -3,19 +3,12 @@
 #' @description
 #' Calculates epigenetic age using the EnsembleAge multi-clock framework
 #' (Haghani et al., 2025). This function computes one of the three available
-#' clock versions (Static, Dynamic, or HumanMouse) by loading the
-#' pre-calculated coefficients from the `EnsembleAgeCoef` package data object.
+#' clock versions (Static, Dynamic, or HumanMouse).
 #'
-#' @param beta.m A numeric matrix of methylation beta values.
-#'   **Rows must correspond to CpG probes** (e.g., `cg00000165`) and
-#'   **columns to samples** (e.g., `GSM990532`). Rownames (CpG IDs) and
-#'   colnames (Sample IDs) are required.
-#' @param clock_version A character string specifying which version of the
-#'   EnsembleAge clocks to calculate. Valid options are `"Dynamic"`, `"Static"`,
-#'   or `"HumanMouse"`. Default is `"HumanMouse"`.
-#' @param verbose A logical flag. If `TRUE` (the default), the function will
-#'   print status messages during calculation, including messages from the
-#'   internal `calculateLinearPredictor` function.
+#' @param betaM A numeric matrix (Rows: CpGs, Cols: Samples) or \code{SummarizedExperiment}.
+#' @param clockVersion Character. One of \code{"Dynamic"}, \code{"Static"}, or \code{"HumanMouse"}.
+#' @param minCoverage Numeric (0-1). Minimum required proportion of CpGs present. Default is 0.
+#' @param verbose Logical. Whether to print status messages.
 #'
 #' @return
 #' A `list` where each element is a named numeric vector of predicted values.
@@ -40,80 +33,65 @@
 #'
 #' @references
 #' Haghani, A., Lu, A.T., Yan, Q. et al.
-#' EnsembleAge: enhancing epigenetic age assessment with a multi-clock framework.
-#' \emph{GeroScience} (2025).
+#' EnsembleAge: enhancing epigenetic age assessment with a
+#' multi-clock framework.
+#' \emph{GeroScience} 2025.
 #'
 #' @export
 #' @importFrom utils data
 #'
 #' @examples
-#' download_OmniAgeR_example("Hannum_example")
-#' load_OmniAgeR_example("Hannum_example")
+#' hannumBmiqM <- loadOmniAgeRdata(
+#'     "omniager_hannum_example",
+#'     verbose = FALSE
+#' )[[1]]
 #' # Ensure it's CpGs=rows, Samples=cols
 #' # Calculate the HumanMouse clock version
-#' age_predictions <- EnsembleAge(hannum_bmiq_m, clock_version = "HumanMouse")
+#' ensembleAgeOut <- ensembleAge(hannumBmiqM, clockVersion = "HumanMouse")
 #'
-EnsembleAge <- function(beta.m, clock_version = "HumanMouse", verbose = TRUE) {
+ensembleAge <- function(betaM, clockVersion = c("HumanMouse", "Static", "Dynamic"),
+                        minCoverage = 0, verbose = TRUE) {
+    clockVersion <- match.arg(clockVersion)
 
-  # --- 1. Start message ---
-  if (verbose) {
-    print(paste0("[EnsembleAge] Starting EnsembleAge_", clock_version, " calculation..."))
-  }
-
-  res_list <- list()
-
-  # --- Step 1: Load and parse coefficients ---
-  # This lazy-loads the 'EnsembleAgeCoef' data object from the package
-  data("EnsembleAgeCoef", envir = environment())
-
-  # Check if clock_version is valid
-  if (!clock_version %in% names(EnsembleAgeCoef)) {
-    stop(paste("[EnsembleAge] Invalid 'clock_version'. Must be one of:", paste(names(EnsembleAgeCoef), collapse = ", ")))
-  }
-
-  temp_coef_list <- EnsembleAgeCoef[[clock_version]]
-
-  # --- Step 2: Loop through each sub-clock ---
-  for (i in seq_along(temp_coef_list)) {
-
-    temp_Coef_sub <- temp_coef_list[[i]]
-    clock_name <- names(temp_coef_list)[i]
-
-    # Check for valid coefficients
-    if (is.null(temp_Coef_sub) || nrow(temp_Coef_sub) < 2) {
-      if(verbose) message(paste("[EnsembleAge] Warning: Skipping clock", clock_name, "due to missing/invalid coefficients."))
-      next
-    }
-
-    Coef_lv <- list()
-
-    # Intercept
-    Coef_lv[[1]] <- as.numeric(temp_Coef_sub[1, 2])
-
-    # Coefficients
-    coefficients <- as.numeric(as.vector(temp_Coef_sub[2:nrow(temp_Coef_sub), 2]))
-    names(coefficients) <- as.vector(temp_Coef_sub[2:nrow(temp_Coef_sub), 1])
-    Coef_lv[[2]] <- coefficients
-
-    # --- Step 3: Calculate the linear predictor ---
-    # (Requires the 'calculateLinearPredictor' function)
-    predage.v <- calculateLinearPredictor(
-      beta.m,
-      coef.lv = Coef_lv,
-      clock.name = paste0(clock_version, "_", clock_name),
-      verbose = verbose # Pass the verbose status to the helper function
+    # --- 1. Data Loading --
+    ensembleAgeCoef <- loadOmniAgeRdata(
+        "omniager_ensembleage_coef",
+        verbose = verbose
     )
 
-    res_list[[paste0(clock_version, "_", clock_name)]] <- predage.v
-  }
+    if (verbose) {
+        message("[EnsembleAge] Initializing EnsembleAge_", clockVersion, " calculation...")
+    }
 
-  return(res_list)
+    # --- 2. Validation & SE Support ---
+    if (!clockVersion %in% names(ensembleAgeCoef)) {
+        stop("[EnsembleAge] Loaded coefficients do not contain version: ", clockVersion)
+    }
+
+    coefList <- ensembleAgeCoef[[clockVersion]]
+    resList <- list()
+
+    # --- 3. Iterate through sub-clocks in the Ensemble ---
+    for (i in seq_along(coefList)) {
+        clockSubName <- names(coefList)[i]
+        coefData <- coefList[[i]]
+
+        fullLabel <- paste0(clockVersion, "_", clockSubName)
+
+        if (is.null(coefData) || nrow(coefData) < 2) {
+            if (verbose) message(sprintf("[%s] Skipping: Invalid coefficient table.", fullLabel))
+            next
+        }
+
+        # --- 4. Call Internal Wrappers ---
+        resList[[fullLabel]] <- .calLinearClock(
+            betaM = betaM,
+            coefData = coefData,
+            clockLabel = fullLabel,
+            minCoverage = minCoverage,
+            verbose = verbose
+        )
+    }
+
+    return(resList)
 }
-
-
-
-
-
-
-
-

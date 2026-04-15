@@ -1,0 +1,131 @@
+#' @title Estimate Transcriptomic Age using the Polyák PBMC Clocks
+#'
+#' @description
+#' Applies the 5-fold cross-validated, cell-type-specific single-cell transcriptomic 
+#' aging clocks developed by Zakar-Polyák et al. (2024) for human blood cells.
+#'
+#' @param seuratObj A Seurat object containing log-normalized expression data
+#' (must include 'donor_id', 'age', 'celltype').
+#' @param cellTypes A character vector of PBMC cell types to analyze. 
+#'   Available cell types are:
+#'   \itemize{
+#'     \item \code{"B"}
+#'     \item \code{"ncMONO"}
+#'     \item \code{"cMONO"}
+#'     \item \code{"CD141_mDC"}
+#'     \item \code{"NK_CD56bright"}
+#'     \item \code{"NK_CD56dim"}
+#'     \item \code{"CD1c_mDC"}
+#'     \item \code{"CD4_CTL"}
+#'     \item \code{"CD4T"}
+#'     \item \code{"CD8_CTL"}
+#'     \item \code{"memCD8T"}
+#'     \item \code{"CD8T"}
+#'     \item \code{"cmCD4T"}
+#'     \item \code{"cDC"}
+#'     \item \code{"DC"}
+#'     \item \code{"dnTreg"}
+#'     \item \code{"emCD4T"}
+#'     \item \code{"RBC"}
+#'     \item \code{"gdT"}
+#'     \item \code{"ILC"}
+#'     \item \code{"matB"}
+#'     \item \code{"memB"}
+#'     \item \code{"MONO"}
+#'     \item \code{"MAIT"}
+#'     \item \code{"nB"}
+#'     \item \code{"nCD4T"}
+#'     \item \code{"nCD8T"}
+#'     \item \code{"NK"}
+#'     \item \code{"Plasma"}
+#'     \item \code{"pDC"}
+#'     \item \code{"Platelet"}
+#'     \item \code{"Treg"}
+#'     \item \code{"T_cell"}
+#'   }
+#'   
+#' @param verbose Logical. Whether to print status messages.
+#'
+#' @return A named list containing the final (5-fold averaged) predictions.
+#' @export
+#' 
+#' @references
+#' Zakar-Polyák, Enikő et al.
+#' Profiling the transcriptomic age of single-cells in humans.
+#' \emph{Commun Biol.} 2024
+#'
+#' 
+#' @examples
+#' # 1. Define valid cell types (Runnable code to satisfy BiocCheck)
+#' polyakClockData <- loadOmniAgeRdata("omniager_scage_polyak_coef", verbose = FALSE)
+#' print(sub("^SC_", "", names(polyakClockData[["imputation_data_list"]]))) 
+#'
+#' \donttest{
+#' # 2. Real pipeline execution (Wrapped in donttest because it requires
+#' # downloading pre-trained models and external example datasets)
+#' library(Seurat)
+#' seuratObj <- loadOmniAgeRdata(
+#'     "omniager_yazar_cd4t_cd8t_example",
+#'     verbose = FALSE
+#' )
+#'
+#' predOut <- estimateScAgePolyak(seuratObj, c("CD4T", "CD8T"))
+#' }
+#' 
+#' 
+
+estimateScAgePolyak <- function(seuratObj, cellTypes,  verbose = TRUE) {
+  
+  if (verbose) message("Loading ScAgePolyak models...")
+  sampleType = "SC"
+  # 1. Load model
+  polyakData <- loadOmniAgeRdata("omniager_scage_polyak_coef", verbose = verbose)
+  polyakClocksCoef <- polyakData[["cts_clocks_coef"]]
+  polyakImputationList <- polyakData[["imputation_data_list"]]
+  
+  finalResultsList <- list()
+  for (ct in cellTypes) {
+    clockKey <- paste(sampleType, gsub(" ", "_", ct), sep = "_")
+    modelFolds <- polyakClocksCoef[[clockKey]]
+    imputeData <- polyakImputationList[[clockKey]]
+    
+    if (is.null(modelFolds)) {
+      warning("Skipping ", ct, ": Model not found for ", clockKey)
+      next
+    }
+    
+    # 2. Get the data 
+    dfBase <- getDfSeurat(seuratObj, cellType = ct, sampleType = sampleType)
+    if (nrow(dfBase) == 0) next
+    
+    # 3. Prediction(5-fold)
+    clock_name_log <- paste("estimateScAgePolyak", ct, sep = "_")
+    foldPreds <- vapply(names(modelFolds), function(f) {
+      res <- predictSCRNAClock(preprocessedData = dfBase, 
+                               imputeData = imputeData, 
+                               weightDf = modelFolds[[f]], 
+                               sampleType = sampleType,
+                               clockName = clock_name_log,
+                               metaColNames = c("cellId", "donorId", "age", "celltype"),
+                               verbose = FALSE)
+      return(res$prediction)
+    }, numeric(nrow(dfBase)))
+    
+    # 4. Calculate the average value and combine the results
+    finalResultsList[[ct]] <- data.frame(
+      cellId = dfBase$cellId,
+      prediction = rowMeans(foldPreds, na.rm = TRUE),
+      age = dfBase$age,
+      donorId = dfBase$donorId,
+      #sampleType = sampleType,
+      celltype = ct
+    )
+  }
+  
+  return(finalResultsList)
+}
+
+
+
+
+

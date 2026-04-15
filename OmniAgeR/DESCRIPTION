@@ -1,33 +1,53 @@
 Package: OmniAgeR
-Title: This package serves as a wrapper to calculate one or more aging
-        clocks from various omic data, including DNA methylation and
-        transcriptome data.
-Version: 0.7.0
-Authors@R: c(
-    person(given = "Zhaozhen",
-           family = "Du",
-           role = c("aut", "cre"),
-           email = "duzhaozhen2022@sinh.ac.cn"),
-    person(given = "Andrew E.",
-           family = "Teschendorff",
-           role = "aut",
-           email = "andrew@sinh.ac.cn"))
-Maintainer: Zhaozhen Du <duzhaozhen2022@sinh.ac.cn>
-Description: OmniAgeR is an R-package for estimating age from various omic data.
+Title: Aging Omic Biomarkers from DNA Methylation and Transcriptomics
+Version: 0.99.9000
+Authors@R: 
+    c(person(given = "Zhaozhen",
+             family = "Du",
+             role = c("aut", "cre"),
+             email = "duzhaozhen2022@sinh.ac.cn",
+             comment = c(affiliation = "Shanghai Institute of Nutrition and Health, CAS")),
+      person(given = "Andrew E.",
+             family = "Teschendorff",
+             role = "aut",
+             email = "andrew@sinh.ac.cn",
+             comment = c(affiliation = "Shanghai Institute of Nutrition and Health, CAS")),
+      person("National Science Foundation of China", 
+             role = "fnd", 
+             comment = c(NSFC = "W2431024, 32370699, 32570775")))
+Description: Provides a comprehensive suite of tools for calculating and evaluating a wide array of aging-related clocks and surrogate biomarkers from DNA methylation and transcriptomic data. 
+URL: https://github.com/Duzhaozhen/OmniAgeR
+BugReports: https://github.com/Duzhaozhen/OmniAgeR/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
-Depends: R (>= 3.5)
-LazyData: true
+Depends: R (>= 4.5.0)
 Suggests: BiocStyle, ggplot2, ggpubr, knitr, patchwork, rmarkdown,
         testthat (>= 3.0.0)
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-Imports: checkmate, dplyr, EpiDISH, glmnet, HiBED, magrittr,
-        preprocessCore, purrr, qs2, randomForest, rlang, Seurat, tidyr,
-        zen4R
+Imports: 
+    dplyr,
+    glmnet,
+    HiBED,
+    magrittr,
+    preprocessCore,
+    purrr,
+    randomForest,
+    rlang,
+    Seurat,
+    tidyr,
+    methods,
+    Matrix,
+    qs2
 NeedsCompilation: no
-Packaged: 2025-11-28 02:21:21 UTC; duzhaozhen
-Author: Zhaozhen Du [aut, cre],
-  Andrew E. Teschendorff [aut]
+biocViews: Software, 
+    Epigenetics, 
+    DNAMethylation, 
+    Transcription, 
+    GeneExpression,
+    ComparativeGenomics, 
+    Regression,
+    MethylationArray,
+    Transcriptomics

@@ -7,14 +7,16 @@
 #'
 #' @param mat An expression matrix (numeric) with **genes as rows** and
 #'   **samples as columns**.
-#' @param filter_genes Logical. If \code{TRUE} (default), the matrix is
+#' @param filterGenes Logical. If \code{TRUE} (default), the matrix is
 #'   subsetted to retain only the genes utilized by the pre-trained models.
-#' @param rank_norm Logical. If \code{TRUE} (default), applies a rank-based
+#' @param rankNorm Logical. If \code{TRUE} (default), applies a rank-based
 #'   inverse normal transformation (rank-normalization) to the expression data.
-#' @param REG Logical. If \code{TRUE} (default), computes the REG (regression)
+#' @param reg Logical. If \code{TRUE} (default), computes the REG (regression)
 #'   age score.
-#' @param PASTA Logical. If \code{TRUE} (default), computes the PASTA age score.
-#' @param CT46 Logical. If \code{TRUE} (default), computes the CT46 age score.
+#' @param pasta Logical. If \code{TRUE} (default), computes the PASTA age score.
+#' @param ct46 Logical. If \code{TRUE} (default), computes the CT46 age score.
+#' @param verbose Logical. Whether to print status messages.
+#'   Default is \code{TRUE}.
 #'
 #' @return
 #' A \code{list} where each element is a numeric vector of predicted age scores
@@ -28,50 +30,67 @@
 #' \emph{bioRxiv.} 2025
 #'
 #' @examples
+#' # 1. Fast runnable example
+#' print("Ready to calculate PASTA scores.")
+#'
+#' \donttest{
 #' library(magrittr)
 #' library(Seurat)
 #' library(glmnet)
-#' download_OmniAgeR_example("seu_gabitto_2024_filtered")
-#' load_OmniAgeR_example("seu_gabitto_2024_filtered")
+#'
+#' seu <- loadOmniAgeRdata(
+#'     "omniager_seu_gabitto_2024_filtered",
+#'     verbose = FALSE
+#' )
 #'
 #' seu$age <- seu$development_stage %>%
-#'  gsub("-year.*", "", .) %>%
-#'  gsub("-", " ", .) %>%
-#'  gsub("80 year old and over stage", "85", .)
+#'     gsub("-year.*", "", .) %>%
+#'     gsub("-", " ", .) %>%
+#'     gsub("80 year old and over stage", "85", .)
 #'
-#' set.seed(42)
-#' seu_bulk <- making_pseudobulks_from_seurat(seu,pool_by = c("cell_type", "age"), chunk_size = 512, verbose = FALSE)
+#' seuBulk <- makePseudobulksPasta(
+#'     seu,
+#'     poolBy = c("cell_type", "age"),
+#'     chunkSize = 512,
+#'     verbose = FALSE
+#' )
 #'
-#' lognorm_matrix <- GetAssayData(seu_bulk, assay = "RNA", layer = "data")
-#' lognorm_matrix <- as.matrix(lognorm_matrix)
+#' lognormMatrix <- GetAssayData(seuBulk, assay = "RNA", layer = "data")
+#' lognormMatrix <- as.matrix(lognormMatrix)
 #'
-#' seu_bulk_meta <- seu_bulk[[c('chunk_size', 'cell_type', 'age')]]
-#' seu_bulk_meta$age <- as.numeric(seu_bulk_meta$age)
-#' PASTA_res <- PASTA_Scores(lognorm_matrix, filter_genes = TRUE, rank_norm = TRUE)
+#' seuBulkMeta <- seuBulk[[c("chunkSize", "cell_type", "age")]]
+#' seuBulkMeta$age <- as.numeric(seuBulkMeta$age)
+#' pastaRes <- pastaScores(lognormMatrix, filterGenes = TRUE, rankNorm = TRUE)
+#' }
 #'
+pastaScores <- function(mat, filterGenes = TRUE, rankNorm = TRUE,
+                        reg = TRUE, pasta = TRUE, ct46 = TRUE, verbose = TRUE) {
+    # 1. Load model data
+    pastaGenesModel <- loadOmniAgeRdata(
+        "omniager_pasta_gene",
+        verbose = verbose
+    )
 
+    resList <- list()
 
-PASTA_Scores <- function(mat, filter_genes = TRUE,
-                         rank_norm = TRUE, REG = TRUE,
-                         PASTA = TRUE, CT46 = TRUE) {
+    # 2. Preprocessing
+    if (filterGenes) {
+        mat <- filterAgeModelGenes(mat, pastaGenesModel)
+    }
 
-  res_list <- list()
-  data("PASTA_Gene")
+    if (rankNorm) {
+        mat <- applyRankNormalization(mat)
+    }
 
-  if (filter_genes) mat <- filtering_age_model_genes(mat,v_genes_model)
-  if (rank_norm)    mat <- applying_rank_normalization(mat)
-  mat_t<- t(mat)
-  if (REG)   res_list[["REG"]] <- predicting_age_score(mat_t, model_type = 'REG')
-  if (PASTA) res_list[["PASTA"]] <- predicting_age_score(mat_t, model_type = 'PASTA')
-  if (CT46) res_list[["CT46"]] <- predicting_age_score(mat_t, model_type = 'CT46')
-  return(res_list)
+    matT <- t(mat)
+
+    # 3. Prediction
+    if (reg) resList[["REG"]] <- .predictAgeScore(matT, modelType = "REG")
+    if (pasta) resList[["PASTA"]] <- .predictAgeScore(matT, modelType = "PASTA")
+    if (ct46) resList[["CT46"]] <- .predictAgeScore(matT, modelType = "CT46")
+
+    return(resList)
 }
-
-
-
-
-
-
 
 
 #' Filter Age Model Genes from Count Matrix
@@ -79,17 +98,38 @@ PASTA_Scores <- function(mat, filter_genes = TRUE,
 #' Subsets the count matrix to include only genes used in the age prediction model.
 #'
 #' @param mat Matrix. Count matrix.
+#' @param pastaGenesModel The genes used for building the model.
 #' @return Matrix. Filtered count matrix with median imputation.
 #' @export
-filtering_age_model_genes <- function(mat,v_genes_model) {
-  #data(v_genes_model, envir = environment())
-  mat <- mat[match(v_genes_model, rownames(mat)), ]
-  median_value <- stats::median(c(mat), na.rm = TRUE)
-  mat[is.na(mat)] <- median_value
-  rownames(mat) <- v_genes_model
-  return(mat)
-}
+#' @examples
+#' # 1. Create a mock count matrix (5 genes, 3 samples)
+#' mock_mat <- matrix(1:15, nrow = 5, ncol = 3)
+#' rownames(mock_mat) <- c("GeneA", "GeneB", "GeneC", "GeneD", "GeneE")
+#' colnames(mock_mat) <- c("Sample1", "Sample2", "Sample3")
+#'
+#' # 2. Define the genes required by the model
+#' # Note: "GeneF" is intentionally missing from the matrix to test imputation
+#' model_genes <- c("GeneA", "GeneC", "GeneF")
+#'
+#' # 3. Run the filter function
+#' filtered_mat <- filterAgeModelGenes(mat = mock_mat, pastaGenesModel = model_genes)
+#'
+#' # 4. View the result
+#' print(filtered_mat)
+filterAgeModelGenes <- function(mat, pastaGenesModel) {
+    if (is.null(rownames(mat))) {
+        stop("Matrix must have row names (gene symbols).")
+    }
 
+    idx <- match(pastaGenesModel, rownames(mat))
+    matFiltered <- mat[idx, , drop = FALSE]
+
+    medianVal <- stats::median(matFiltered, na.rm = TRUE)
+    matFiltered[is.na(matFiltered)] <- medianVal
+
+    rownames(matFiltered) <- pastaGenesModel
+    return(matFiltered)
+}
 
 #' Apply Rank Normalization to Matrix
 #'
@@ -98,50 +138,83 @@ filtering_age_model_genes <- function(mat,v_genes_model) {
 #' @param mat Matrix. Count matrix.
 #' @return Matrix. Rank-normalized matrix.
 #' @export
-applying_rank_normalization <- function(mat) {
-  mat <- apply(mat, 2, rank, ties.method = 'average')
-  return(mat)
+#' @examples
+#' # 1. Create a mock count matrix (3 genes, 3 samples)
+#' # Notice that Sample1 has a tie (10 and 10), and Sample3 has identical values
+#' mock_mat <- matrix(
+#'     c(
+#'         10, 20, 10, # Sample 1
+#'         5, 50, 15, # Sample 2
+#'         8, 8, 8
+#'     ), # Sample 3
+#'     nrow = 3, ncol = 3
+#' )
+#' rownames(mock_mat) <- c("GeneA", "GeneB", "GeneC")
+#' colnames(mock_mat) <- c("Sample1", "Sample2", "Sample3")
+#'
+#' # 2. View the original matrix
+#' print(mock_mat)
+#'
+#' # 3. Apply rank normalization
+#' norm_mat <- applyRankNormalization(mat = mock_mat)
+#'
+#' # 4. View the rank-normalized matrix
+#' # In Sample1, the two 10s will share the average rank of 1.5
+#' print(norm_mat)
+applyRankNormalization <- function(mat) {
+    matNormalized <- apply(mat, 2, function(x) {
+        r <- rank(x, ties.method = "average")
+        return(r)
+    })
+    return(matNormalized)
 }
-
-
-
 
 #' Predict Age Score from Gene Expression Matrix
 #'
 #' Uses pre-trained models to predict age scores based on gene expression.
 #'
 #' @param mat Matrix. Processed count matrix.
-#' @param model_type Character. Model type ('PASTA', 'REG', or 'CT46').
+#' @param modelType Character. Model type ('PASTA', 'REG', or 'CT46').
+#' @param verbose Logical. Whether to print status messages during data loading. Default is FALSE.
 #' @return Numeric vector. Predicted age scores.
-#' @export
+#' @noRd
 
-predicting_age_score <- function(mat, model_type = 'PASTA') {
-  requireNamespace('glmnet', quietly = TRUE)
-  #requireNamespace('dplyr', quietly = TRUE)
-  # data(cvfit_REG, envir = environment())
-  # data(cvfit_PASTA, envir = environment())
-  # data(beta_PASTA, envir = environment())
-  # data(cvfit_C46, envir = environment())
-  # data(beta_C46, envir = environment())
-  data("cvfit_REG")
-  data("cvfit_PASTA")
-  data("beta_PASTA")
-  data("cvfit_C46")
-  data("beta_C46")
+.predictAgeScore <- function(mat, modelType = "PASTA", verbose = FALSE) {
+    # 1. Load data according to the type
+    dataName <- switch(modelType,
+        "REG" = "omniager_cvfit_reg",
+        "PASTA" = "omniager_cvfit_pasta",
+        "CT46" = "omniager_cvfit_c46",
+        stop("Invalid modelType. Choose PASTA, REG, or CT46.")
+    )
+    # Obtain the current model object
+    curModel <- loadOmniAgeRdata(
+        dataName,
+        verbose = verbose
+    )
 
+    # 2. Prediction
+    vAgeScores <- as.numeric(stats::predict(curModel, mat,
+        s = "lambda.min",
+        type = "link"
+    )[, 1])
 
-  if (model_type == 'PASTA') cur_model <- cvfit_PASTA
-  if (model_type == 'REG')   cur_model <- cvfit_REG
-  if (model_type == 'CT46')  cur_model <- cvfit_C46
-  if (!model_type %in% c('PASTA', 'REG', 'CT46'))
-    stop('Specify a valid model; either PASTA, REG, or CT46')
+    # 3. Scaled
+    if (modelType == "PASTA") {
+        betaPASTA <- loadOmniAgeRdata(
+            "omniager_beta_pasta",
+            verbose = verbose
+        )
+        vAgeScores <- vAgeScores * betaPASTA
+    } else if (modelType == "CT46") {
+        betaC46 <- loadOmniAgeRdata(
+            "omniager_beta_c46",
+            verbose = verbose
+        )
+        vAgeScores <- vAgeScores * betaC46
+    }
 
-  v_age_scores <- as.numeric(stats::predict(cur_model, mat, s = 'lambda.min',
-                                            type = 'link')[, 1])
-  if (model_type == 'PASTA') v_age_scores <- v_age_scores * beta_PASTA
-  if (model_type == 'CT46')  v_age_scores <- v_age_scores * beta_C46
-
-  return(v_age_scores)
+    return(vAgeScores)
 }
 
 
@@ -151,145 +224,101 @@ predicting_age_score <- function(mat, model_type = 'PASTA') {
 #' user-defined metadata variables and a specified chunk size.
 #'
 #' @param seu A Seurat object.
-#' @param pool_by A character vector of column names from `@meta.data`. Cells are
+#' @param poolBy A character vector of column names from `@meta.data`. Cells are
 #'   grouped by unique combinations of these variables prior to chunking.
 #'   Default: `c("cell_type", "age")`.
-#' @param chunk_size A numeric value. The target number of cells per pseudobulk
+#' @param chunkSize A numeric value. The target number of cells per pseudobulk
 #'   sample. If set to 1, no aggregation is performed and the original
 #'   object is returned (with metadata updated). Default: `1000`.
 #' @param verbose Logical. If `TRUE`, prints a summary table detailing the
 #'   number of pseudobulk samples generated per group. Default: `TRUE`.
 #'
 #' @return A new Seurat object where columns represent pseudobulk samples.
-#'   The `@meta.data` slot includes the original `pool_by` variables and the
-#'   `chunk_size` used for aggregation.
+#'   The meta.data slot includes the original `poolBy` variables and the
+#'   `chunkSize` used for aggregation.
 #' @export
+#' @examples
+#' library(Seurat)
 #'
-making_pseudobulks_from_seurat <- function(seu,
-                                           pool_by = c("cell_type", "age"),
-                                           chunk_size = 1000,
-                                           verbose = TRUE) {
-
-  # --- 1. Validate Dependencies and Inputs ---
-  if (!require('Seurat', quietly = TRUE)) {
-    stop("Package 'Seurat' is required but not installed.")
-  }
-
-  if (!all(pool_by %in% colnames(seu@meta.data))) {
-    stop("Error: Not all variables in 'pool_by' found in Seurat metadata.")
-  }
-
-  # --- 2. Handle 'chunk_size == 1' (no aggregation) ---
-  if (chunk_size == 1) {
-    seu_bulk <- seu
-    # Ensure metadata is still present even if no aggregation is done
-    seu_bulk$chunk_size <- chunk_size
-    for (col in pool_by) {
-      if (!col %in% colnames(seu_bulk@meta.data)) {
-        seu_bulk[[col]] <- seu[[col, drop=TRUE]]
-      }
+#' # 1. Create a tiny mock count matrix (5 genes, 20 cells)
+#' set.seed(123)
+#' mock_counts <- matrix(rpois(100, lambda = 5), nrow = 5, ncol = 20)
+#' rownames(mock_counts) <- paste0("Gene", 1:5)
+#' colnames(mock_counts) <- paste0("Cell_", 1:20)
+#'
+#' # 2. Create mock metadata with the default 'poolBy' columns
+#' mock_meta <- data.frame(
+#'     cell_type = rep(c("T_cell", "B_cell"), each = 10),
+#'     age = rep(c(30, 40), times = c(10, 10)),
+#'     row.names = colnames(mock_counts)
+#' )
+#'
+#' # 3. Build the Seurat object
+#' seu_mock <- CreateSeuratObject(counts = mock_counts, meta.data = mock_meta)
+#'
+#' # 4. Run the pseudobulk function
+#' # We have 10 cells per group. With chunkSize = 5, we expect exactly
+#' # 2 pseudobulks for T_cell and 2 pseudobulks for B_cell.
+#' seu_pb <- makePseudobulksPasta(
+#'     seu = seu_mock,
+#'     poolBy = c("cell_type", "age"),
+#'     chunkSize = 5,
+#'     verbose = FALSE
+#' )
+#'
+#' # 5. View the metadata of the resulting pseudobulked object
+#' print(seu_pb[[]])
+makePseudobulksPasta <- function(seu, poolBy = c("cell_type", "age"),
+                                 chunkSize = 1000, verbose = TRUE) {
+    if (!all(poolBy %in% colnames(seu[[]]))) {
+        stop("Required metadata columns not found in Seurat object.")
     }
-    return(seu_bulk)
-  }
 
-  # --- 3. Core Chunking Logic (Base R replacement for data.table) ---
-
-  # Extract metadata as a data.frame
-  pdata1 <- seu[[pool_by]]
-
-  # Create a single grouping factor (equivalent to data.table's 'by = pool_by')
-  # interaction() creates unique IDs for "T-cell.50", "T-cell.60", etc.
-  group_factor <- interaction(pdata1[, pool_by], drop = TRUE)
-
-  # Use ave() to perform chunking and random sampling independently within each group
-  # This is the Base R equivalent of data.table's '[, chunk := sample(...), by = ...]'
-  pdata1$chunk <- ave(
-    seq_len(nrow(pdata1)), # Pass a simple numeric vector
-    group_factor,         # Group by this factor
-    FUN = function(idx_in_group) {
-      # 'idx_in_group' is a vector of row indices for the current group
-      n_in_group <- length(idx_in_group)
-      num_chunks <- ceiling(n_in_group / chunk_size)
-
-      # Create the vector of chunk IDs for this group
-      chunk_ids_for_group <- rep(
-        1:num_chunks,
-        each = chunk_size,
-        length.out = n_in_group
-      )
-
-      # Shuffle and return the chunk IDs
-      sample(chunk_ids_for_group)
+    if (chunkSize == 1) {
+        return(seu)
     }
-  )
 
-  # Create unique chunk_id (Base R replacement for .SDcols and apply)
-  # Paste all 'pool_by' columns (e.g., "L5.neuron-85")
-  temp_id <- do.call(paste, c(pdata1[, pool_by], sep = "-"))
-  # Add the chunk number (e.g., "L5.neuron-85-1")
-  temp_id_with_chunk <- paste(temp_id, pdata1$chunk, sep = "-")
+    # 1. Generate grouping factors
+    groupFactor <- interaction(seu[[]][, poolBy], drop = TRUE)
 
-  # Create R-syntactically-valid names (e.g., "L5.neuron_85-1" -> "L5.neuron_85.1")
-  pdata1$chunk_id <- make.names(temp_id_with_chunk)
+    # 2. Block indexing calculation
+    indices <- seq_len(nrow(seu[[]]))
+    chunkIds <- character(length(indices))
 
-  # Add the new chunk_id back to the Seurat object
-  seu$chunk_id <- pdata1$chunk_id
+    splitIndices <- split(indices, groupFactor)
 
-  # --- 4. Perform Aggregation ---
-  seu_bulk <- Seurat::AggregateExpression(
-    seu,
-    group.by = "chunk_id",
-    return.seurat = TRUE,
-    verbose = FALSE
-  )
+    for (groupName in names(splitIndices)) {
+        idx <- splitIndices[[groupName]]
+        n <- length(idx)
+        numChunks <- ceiling(n / chunkSize)
+        groupChunks <- rep(seq_len(numChunks), each = chunkSize, length.out = n)
+        chunkIds[idx] <- paste(groupName, sample(groupChunks), sep = "-")
+    }
 
-  # --- 5. Manually Restore Metadata (Base R replacement for data.table) ---
+    seu$tempChunkId <- make.names(chunkIds)
 
-  # 1. Create a mapping data.frame from chunk_id to all pool_by variables
-  #    (Using !duplicated is the Base R equivalent of data.table's 'unique(..., by = ...)')
-  meta_map <- pdata1[!duplicated(pdata1$chunk_id), c("chunk_id", pool_by)]
-
-  # 2. Get the metadata from the newly created pseudobulk object
-  meta_new <- seu_bulk@meta.data
-
-  # 3. Re-order the meta_map to match the exact cell order in seu_bulk
-  ordered_meta_map <- meta_map[match(rownames(meta_new), meta_map$chunk_id), ]
-
-  # 4. Add the metadata columns back to the seu_bulk object
-  for (col in pool_by) {
-    seu_bulk[[col]] <- ordered_meta_map[[col]]
-  }
-
-  # --- 6. Final Cleanup and Return ---
-  seu_bulk$chunk_size <- chunk_size
-
-  if (verbose) {
-    print("Summary of created pseudobulk samples:")
-    # Use two 'aggregate' calls to replicate the data.table summary
-    # Step A: Count cells per chunk_id
-    cells_per_chunk_df <- aggregate(
-      list(cell_count = pdata1$chunk_id),
-      by = pdata1[, c(pool_by, "chunk_id")],
-      FUN = length
+    # 3. Aggregation
+    seuBulk <- Seurat::AggregateExpression(
+        seu,
+        group.by = "tempChunkId",
+        return.seurat = TRUE,
+        verbose = FALSE
     )
-    # Step B: Count chunks per group
-    summary_table <- aggregate(
-      list(chunk_count = cells_per_chunk_df$chunk_id),
-      by = cells_per_chunk_df[, pool_by],
-      FUN = length
-    )
-    print(summary_table)
-  }
 
-  return(seu_bulk)
+    # 4. Metadata recovery
+    firstMatchIdx <- match(colnames(seuBulk), seu$tempChunkId)
+    originalMeta <- seu[[]][firstMatchIdx, poolBy, drop = FALSE]
+
+    for (col in poolBy) {
+        seuBulk[[col]] <- originalMeta[[col]]
+    }
+
+    seuBulk$chunkSize <- chunkSize
+
+    if (verbose) {
+        msg <- utils::capture.output(table(seuBulk[[poolBy[1]]]))
+        message(paste(msg, collapse = "\n"))
+    }
+
+    return(seuBulk)
 }
-
-
-
-
-
-
-
-
-
-

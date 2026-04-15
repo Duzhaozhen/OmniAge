@@ -1,39 +1,51 @@
-#' @title
-#' Estimate RepliTali score
-#'
-#' @aliases RepliTali
+#' @title Estimate RepliTali score
 #'
 #' @description
-#' This function takes as input an Illumina 450k/EPIC DNAm beta matrix and will return the RepliTali score.
-#'
-#' @param data.m
-#' DNAm beta value matrix with rows labeling Illumina 450k/EPIC CpGs and columns labeling samples.
-#'
+#' This function takes as input an Illumina 450k/EPIC DNAm beta matrix and
+#' will return the RepliTali score.
 #' @details
-#' The RepliTali model is described in Endicott et al. 2022. It is based on 87 population doubling associated hypomethylated CpGs.
+#' The RepliTali model is described in Endicott et al. 2022. It is based on
+#' 87 population doubling associated hypomethylated CpGs.
+#'
+#' @param betaM A numeric matrix of DNAm beta values (probes as rows). Rows
+#' should be Illumina 450k/EPIC CpG identifiers and columns should be samples.
+#' @param minCoverage Numeric (0-1). Minimum required probe coverage.
+#'   Default is 0.
+#' @param verbose Logical. Whether to print coverage statistics.
+#'
+
 #' @return The RepliTali score of each sample.
 #'
 #'
 #' @references
 #' Endicott JL, Nolte PA, Shen H, Laird PW.
-#' Cell division drives DNA methylation loss in late-replicating domains in primary human cells.
+#' Cell division drives DNA methylation loss in late-replicating domains
+#' in primary human cells.
 #' \emph{Nat Commun.} 2022
 #'
 #' @examples
-#' download_OmniAgeR_example("LungInv")
-#' load_OmniAgeR_example("LungInv")
-#' replitali.v<-RepliTali(data.m = bmiq.m)
+#' lungInv <- loadOmniAgeRdata(
+#'     "omniager_lung_inv",
+#'     verbose = FALSE
+#' )
+#' lungInvM <- lungInv$bmiq_m
+#' repliTaliOut <- repliTali(betaM = lungInvM, minCoverage = 0)
 #' @export
 #'
 
 
-RepliTali<-function(data.m){
-  data('Replitali')
-  common.v <- intersect(rownames(data.m),replitali.cpg.v);
-  print(paste("[RepliTali] Number of represented RepliTali CpGs (max=87)=",length(common.v),sep=""))
-  rep.beta.m<-data.m[match(replitali.cpg.v,rownames(data.m)),]
-  rep.beta.m[1,]<-1 # Intercept term
-  multi.beta.m<-rep.beta.m * replitali.coe
-  replitali.v<-colSums(multi.beta.m,na.rm = T)
-  return(replitali.v)
+repliTali <- function(betaM, minCoverage = 0, verbose = TRUE) {
+    replitaliCoef <- loadOmniAgeRdata(
+        "omniager_replitali_coef",
+        verbose = verbose
+    )
+    score <- .calLinearClock(
+        betaM = betaM,
+        coefData = replitaliCoef,
+        clockLabel = "repliTali",
+        minCoverage = minCoverage,
+        verbose = verbose
+    )
+
+    return(score)
 }

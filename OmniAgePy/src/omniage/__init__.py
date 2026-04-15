@@ -1,4 +1,4 @@
-__version__ = "0.1.0"
+__version__ = "0.99.4"
 
 from .predict import cal_epimarker, list_available_clocks, get_clock_coefs,get_clock_coefs
 
@@ -10,7 +10,8 @@ from .models import (
     Zhang10, PhenoAge, DunedinPACE, GrimAge1, GrimAge2, DNAmFitAge, IC_Clock,
     EpiTOC1, EpiTOC2, EpiTOC3, StemTOC, StemTOCvitro, RepliTali, HypoClock, EpiCMIT_Hypo,
     EpiCMIT_Hyper,DNAmTL, PCHorvath2013, PCHorvath2018, PCHannum, PCPhenoAge, PCDNAmTL, PCGrimAge1,
-    ABEC, eABEC, cABEC, PipekElasticNet, PipekFilteredh, PipekRetrainedh, WuClock,
+    ABEC, eABEC, cABEC, PipekElasticNet, PipekFilteredh, PipekRetrainedh, WuClock, IntrinClock, GaragnaniClock,
+    WeidnerClock,
     # --- Causal / Stochastic ---
     CausalAge, DamAge, AdaptAge, StocH, StocP, StocZ,
     
@@ -24,19 +25,24 @@ from .models import (
     McCartneyTotalHDLRatio, McCartneyWHR, McCartneyBodyFat,
     
     # --- Transcriptomic ---
-    scImmuAging, BrainCTClock, PASTA_Clock,
+    scImmuAging, BrainCTClock, PASTA_Clock,ScAgePolyakClock,BuckleyMouseSVZ,
     
-    # --- CTS & Pan-Mammalian & Ensemble ---
+    # --- CTS & Pan-Mammalian & Ensemble & Mouse---
     NeuIn, GliaIn, Brain, NeuSin, GliaSin, Hep, Liver,
     PanMammalianUniversal, PanMammalianBlood, PanMammalianSkin,
     EnsembleAgeHumanMouse,EnsembleAgeStatic,EnsembleAgeDynamic,
+    PetkovichMouse, ThompsonMouse, MeerMouse,
     
     # --- Gestational & CTF ---
     BohlinGA, EPICGA, LeeControl,LeeRobust,LeeRefinedRobust, KnightGA, MayneGA,
     DNAmCTFClock,
 
     # --- Disease Risk ---
-    CompSmokeIndex
+    CompSmokeIndex, HepatoXuRisk,
+
+    # --- Proteomics ---
+    WyssCorayOrganAge, GladyshevOrganAge
+
 )
 
 
@@ -53,6 +59,7 @@ __all__ = [
     "Zhang10", "PhenoAge", "DunedinPACE", "GrimAge1", "GrimAge2", "DNAmFitAge", "IC_Clock",
     "EpiTOC1", "EpiTOC2", "EpiTOC3", "StemTOC", "StemTOCvitro", "RepliTali", "HypoClock", "EpiCMIT_Hypo",
     "EpiCMIT_Hyper","DNAmTL","PCHorvath2013", "PCHorvath2018", "PCHannum", "PCPhenoAge", "PCDNAmTL", "PCGrimAge1",
+    "IntrinClock", "GaragnaniClock", "WeidnerClock"
     
     # Advanced
     "CausalAge", "DamAge", "AdaptAge", "StocH", "StocP", "StocZ", "SystemsAge",
@@ -64,12 +71,15 @@ __all__ = [
     "McCartneyTotalHDLRatio", "McCartneyWHR", "McCartneyBodyFat",
     
     # Transcriptomic
-    "scImmuAging", "BrainCTClock", "PASTA_Clock",
+    "scImmuAging", "BrainCTClock", "PASTA_Clock", "ScAgePolyakClock", "BuckleyMouseSVZ",
     
     # Others
     "NeuIn", "GliaIn", "Brain", "NeuSin", "GliaSin", "Hep", "Liver",
     "PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin",
-    "EnsembleAgeHumanMouse","EnsembleAgeStatic","EnsembleAgeDynamic",
+    "EnsembleAgeHumanMouse","EnsembleAgeStatic","EnsembleAgeDynamic", "PetkovichMouse", "ThompsonMouse", "MeerMouse",
     "BohlinGA", "EPICGA", "LeeControl","LeeRobust","LeeRefinedRobust", "KnightGA", "MayneGA",
-    "DNAmCTFClock","CompSmokeIndex"
+    "DNAmCTFClock","CompSmokeIndex", "HepatoXuRisk",
+    
+    # Proteomics
+    "WyssCorayOrganAge", "GladyshevOrganAge"
 ]

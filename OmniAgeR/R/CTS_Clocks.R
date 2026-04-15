@@ -41,15 +41,17 @@
 #' * `'Liver'` (Semi-intrinsic): A intrinsic clock for **whole liver tissue**.
 #'     (Uses raw data).
 #'
-#' @param data.m  A DNAm matrix (row: CpGs, column: samples) of the samples you want to get  DNAm age predicted by a CTS clock.
-#' @param CTSclocks A character vector of one or more clocks to apply.
+#' @param betaM  A DNAm matrix (row: CpGs, column: samples) of the samples you
+#' want to get  DNAm age predicted by a CTS clock.
+#' @param compClocks A character vector of one or more clocks to apply.
 #'                  (e.g., 'Neu-In', 'Hep', c('Neu-In', 'Neu-Sin', 'Brain')).
 #' @param dataType Type of the samples ('bulk' or 'sorted').
-#' @param CTF.m Optional cell type fraction matrix (rows: samples, columns: cell types).
+#' @param ctfM Optional cell type fraction matrix
+#' (rows: samples, columns: cell types).
 #'              Required for 'Intrinsic' bulk clocks if tissue is not 'brain'.
 #' @param tissue What tissue are your samples from ('brain' or 'otherTissue').
-#' @param coreNum Number of cores for parallel computation in preprocessing.
-#'
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.
 #' @param verbose Logical. If `TRUE` (default), the function will print
 #'   progress messages to the console.
 #'
@@ -62,259 +64,214 @@
 #'
 #' @references
 #' Tong H, Guo X, Jacques M, Luo Q, Eynon N, Teschendorff AE.
-#' Cell-type specific epigenetic clocks to quantify biological age at cell-type resolution.
+#' Cell-type specific epigenetic clocks to quantify biological age
+#' at cell-type resolution.
 #' \emph{Aging} 2024
 #'
 #' @examples
-#' download_OmniAgeR_example("CTS_MurphyGSE88890")
-#' load_OmniAgeR_example("CTS_MurphyGSE88890")
-#' agePred_df <- CTS_Clocks(Murphy_beta_m, CTSclock = c('Neu-In','Neu-Sin'), dataType = 'bulk', CTF.m = NULL, tissue = 'brain',coreNum = 1)
+#' murphyBetaM <- loadOmniAgeRdata(
+#'     "omniager_cts_murphy_gse88890",
+#'     verbose = FALSE
+#' )[[1]]
 #'
-#' download_OmniAgeR_example("CTS_PaiGSE112179")
-#' load_OmniAgeR_example("CTS_PaiGSE112179")
-#' agePred_df <- CTS_Clocks(Pai_beta_m, CTSclock = c('Neu-In','Neu-Sin'), dataType = 'sorted', CTF.m = NULL, tissue = 'brain',coreNum = 1)
+#' agePred_df <- ctsClocks(
+#'     murphyBetaM,
+#'     compClocks = c("Neu-In", "Neu-Sin"),
+#'     dataType = "bulk",
+#'     ctfM = NULL,
+#'     tissue = "brain"
+#' )
 #'
-#' download_OmniAgeR_example("CTS_ExampleData_Liver")
-#' load_OmniAgeR_example("CTS_ExampleData_Liver")
-#' agePred_df <- CTS_Clocks(Liver_beta_m, CTSclock = c('Hep','Liver'), dataType = 'bulk', CTF.m = NULL, tissue = 'otherTissue',coreNum = 1)
+#' paiBetaM <- loadOmniAgeRdata(
+#'     "omniager_cts_pai_gse112179",
+#'     verbose = FALSE
+#' )[[1]]
+#' agePred_df <- ctsClocks(
+#'     paiBetaM,
+#'     compClocks = c("Neu-In", "Neu-Sin"),
+#'     dataType = "sorted",
+#'     ctfM = NULL,
+#'     tissue = "brain"
+#' )
 #'
+#' liverBetaM <- loadOmniAgeRdata(
+#'     "omniager_cts_example_data_liver",
+#'     verbose = FALSE
+#' )[[1]]
+#' agePred_df <- ctsClocks(
+#'     liverBetaM,
+#'     compClocks = c("Hep", "Liver"),
+#'     dataType = "bulk",
+#'     ctfM = NULL,
+#'     tissue = "otherTissue"
+#' )
 #'
+#' @export
+ctsClocks <- function(betaM,
+                      compClocks = c("Neu-In"),
+                      dataType = c("bulk", "sorted"),
+                      ctfM = NULL,
+                      tissue = c("brain", "otherTissue"),
+                      minCoverage = 0,
+                      verbose = TRUE) {
+    dataType <- match.arg(dataType)
+    tissue <- match.arg(tissue)
 
+    ctsClocksCoef <- loadOmniAgeRdata(
+        "omniager_cts_clocks_coef",
+        verbose = verbose
+    )
 
+    # --- 1. Perform full data processing (deconvolution) ---
+    needsIntrinsic <- any(c("Neu-In", "Glia-In", "Brain") %in% compClocks)
 
-CTS_Clocks <- function(data.m,
-                      CTSclocks = c('Neu-In'),
-                      dataType = c('bulk', 'sorted'),
-                      CTF.m = NULL,
-                      tissue = c('brain', 'otherTissue'),
-                      coreNum = NULL,
-                      verbose = TRUE){
-
-  if (verbose) {
-    print(paste0("[CTS_Clocks] Starting CTS_Clocks calculation..."))
-  }
-
-  # --- 1. Initialization and Setup ---
-
-  data("CTS_Clocks_Coef")
-  # Set default core number for parallel computation in ProcessData
-  if (is.null(coreNum)) {
-    coreNum <- ceiling(parallel::detectCores() / 2)
-  }
-
-  # Initialize a list to store prediction results for each clock
-  results.ls <- list()
-
-  # Define clock types based on their preprocessing requirements
-  # 'Intrinsic' clocks require data to be processed (residuals or Z-score)
-  intrinsic_clock_models <- c('Neu-In', 'Glia-In', 'Brain')
-  # 'Semi-intrinsic' linear clocks use raw data
-  semi_intrinsic_linear_models <- c('Neu-Sin', 'Glia-Sin')
-  # 'Semi-intrinsic' glmnet clocks use raw data and have a different prediction logic
-  semi_intrinsic_glmnet_models <- c('Hep', 'Liver')
-
-
-  # --- 2. Optimized Preprocessing (Run-Once Logic) ---
-
-  # Check if any requested clock requires the 'Intrinsic' preprocessing step
-  needs_processing <- any(intrinsic_clock_models %in% CTSclocks)
-
-  # Lazily initialize the processed data object.
-  # It will only be computed if 'needs_processing' is TRUE.
-  processed_data.m <- NULL
-
-  if (needs_processing) {
-    if (dataType == 'bulk') {
-      # This is the most computationally expensive step.
-      # We calculate residuals only ONCE for all 'Intrinsic' bulk clocks.
-
-      processed_data.m <- CTS_Clocks_ProcessData(data.m,
-                                      dataType = 'bulk',
-                                      tissue = tissue,
-                                      CTF.m = CTF.m,
-                                      coreNum = coreNum)
-    } else if (dataType == 'sorted') {
-      # For 'sorted' data, 'Intrinsic' clocks require Z-score standardization.
-
-      processed_data.m <- CTS_Clocks_ProcessData(data.m,
-                                      dataType = 'sorted',
-                                      coreNum = coreNum)
+    if (needsIntrinsic && dataType == "bulk" && is.null(ctfM)) {
+        if (tissue == "brain") {
+            if (verbose) message("[CTS] Deconvolving brain tissue fractions using full matrix...")
+            estF <- HiBED::HiBED_deconvolution(betaM, h = 1) / 100
+            ctfM <- as.matrix(estF[, c(3, 2, 1)]) # Neu, Glia, EndoStrom
+        } else {
+            stop("ctfM is required for non-brain bulk tissue.")
+        }
     }
-  }
 
-  # --- 3. Iterate and Predict for Each Requested Clock ---
-
-  for (clock_name in CTSclocks) {
-
-    if (clock_name %in% intrinsic_clock_models) {
-      # --- Path A: 'Intrinsic' Clocks (e.g., Neu-In) ---
-
-      # Load the clock coefficients data file (e.g., Neu-InCoef.rda)
-      #data(list = paste0("CTS_",clock_name, 'Coef'), envir = environment())
-      clockCoef.df <- CTS_Clocks_Coef[[clock_name]]
-
-
-      # Predict using the pre-computed processed data (residuals or Z-scored)
-      intercept <- clockCoef.df$coef[1]
-      weights_df <- clockCoef.df[-1, ]
-      weights_vec <- weights_df$coef
-      names(weights_vec) <- weights_df$probe
-      coef_list <- list(intercept, weights_vec)
-
-      results.ls[[clock_name]] <- calculateLinearPredictor(
-        beta.m = processed_data.m,
-        coef.lv = coef_list,
-        clock.name = clock_name,
-        verbose
-      )
+    # --- 2. Deconvolution ---
+    allClockCpGs <- unique(unlist(lapply(ctsClocksCoef[compClocks], function(x) {
+        if (methods::is(x, "glmnet")) {
+            coefMat <- as.matrix(coef(x))
+            probes <- rownames(coefMat)[rowSums(coefMat != 0) > 0]
+            return(probes[probes != "(Intercept)"])
+        }
+        probes <- x$probe[x$coef != 0]
+        return(probes[probes != "(Intercept)"])
+    })))
 
 
-    } else if (clock_name %in% semi_intrinsic_linear_models) {
-      # --- Path B: 'Semi-intrinsic' Linear Clocks (e.g., Neu-Sin) ---
+    dummyWeights <- setNames(rep(1, length(allClockCpGs)), allClockCpGs)
+    coverage <- .checkCpGCoverage(
+        betaM = betaM,
+        allWeights = dummyWeights,
+        clockName = "CTS_Global",
+        minCoverage = minCoverage,
+        verbose = verbose
+    )
 
-      # Load the clock coefficients (e.g., Neu-SinCoef.rda)
-      #data(list = paste0("CTS_",clock_name, 'Coef'), envir = environment())
-      clockCoef.df <- CTS_Clocks_Coef[[clock_name]]
-
-      intercept <- clockCoef.df$coef[1]
-      weights_df <- clockCoef.df[-1, ]
-      weights_vec <- weights_df$coef
-      names(weights_vec) <- weights_df$probe
-      coef_list <- list(intercept, weights_vec)
-
-      # Predict using the new function and the raw, unprocessed data.m
-      results.ls[[clock_name]] <- calculateLinearPredictor(
-        beta.m = data.m,
-        coef.lv = coef_list,
-        clock.name = clock_name,
-        verbose
-      )
-
-    } else if (clock_name %in% semi_intrinsic_glmnet_models) {
-      # --- Path C: 'Semi-intrinsic' glmnet Clocks (e.g., Hep) ---
-
-      # Load the .glm model object (e.g., HepClock.rda)
-      #data(list = paste0("CTS_",clock_name, 'Clock'), envir = environment())
-
-      # Evaluate the loaded object name (e.g., HepClock.glm)
-      # We create a copy so that trimming does not affect the loaded object
-      # in subsequent loops.
-      current_clock.glm <- CTS_Clocks_Coef[[clock_name]]
-
-      # --- Begin glmnet-specific probe matching ---
-      # This logic finds the intersection of CpGs between the clock and input data
-
-      # Get CpGs from the trained clock model
-      ClockCpGs.v <- rownames(current_clock.glm$beta)
-      # Get CpGs from the user's input data
-      TestSetCpGs.v <- rownames(data.m)
-
-      ClockCpGs_df <- as.data.frame(coef(current_clock.glm))
-      non_zero_cpg <- rownames(ClockCpGs_df)[which(ClockCpGs_df[[1]] !=0 )]
-      non_zero_cpg <- non_zero_cpg[-1]
-
-      if (verbose) {
-        print(paste0("[",clock_name,
-                     "] Number of represented ", clock_name, " CpGs (max=",
-                     length(non_zero_cpg), ")=", sum(TestSetCpGs.v %in% non_zero_cpg)))
-      }
-
-      # Find the indices of clock CpGs in the user's data
-      idx <- match(ClockCpGs.v, TestSetCpGs.v)
-
-      # Trim the clock's beta matrix to only include probes present in the user's data
-      # We re-evaluate the original object to get a fresh beta matrix to trim
-      #original_beta <- eval(parse(text = paste0(clock_name, 'Clock.glm')))$beta
-      original_beta <- current_clock.glm$beta
-      current_clock.glm$beta <- original_beta[!is.na(idx), , drop = FALSE]
-
-      # Update the clock's dimensions
-      current_clock.glm$dim <- c(sum(!is.na(idx)), 1)
-
-      # Trim the user's data matrix to match the clock's probes and order
-      data_trimmed.m <- data.m[na.omit(idx), , drop = FALSE]
-
-      # Perform prediction using the trimmed clock and trimmed data
-      results.ls[[clock_name]] <- as.vector(predict(current_clock.glm,
-                                                           newx = t(data_trimmed.m)))
-    } else {
-      warning(paste("Clock name '", clock_name, "' not recognized. Skipping."))
+    if (!coverage$pass) {
+        if (verbose) warning("[CTS] Calculation aborted: Data integrity check failed.")
+        return(as.data.frame(matrix(NA, nrow = ncol(betaM), ncol = length(compClocks)),
+            row.names = colnames(betaM), col.names = compClocks
+        ))
     }
-  }
 
-  # --- 4. Format and Return Output ---
+    # --- 3. Prepare the data subset ---
+    presentBetaMat <- betaM[coverage$betaIdx, , drop = FALSE]
 
-  if (length(CTSclocks) == 0) {
-    warning("No clocks were specified or recognized.")
-    return(NULL)
-  }
+    # --- 4. Perform residual calculation and standardization ---
+    processedMat <- NULL
+    if (needsIntrinsic) {
+        processedMat <- .processCtsData(
+            betaM = presentBetaMat,
+            dataType = dataType,
+            tissue = tissue,
+            ctfM = ctfM,
+            verbose = verbose
+        )
+    }
+
+    # --- 5. Iterative calculation of predicted values ---
+    resultsList <- list()
+    for (clockLabel in compClocks) {
+        modelObj <- ctsClocksCoef[[clockLabel]]
+
+        if (clockLabel %in% c("Neu-In", "Glia-In", "Brain", "Neu-Sin", "Glia-Sin")) {
+            targetMat <- if (clockLabel %in% c("Neu-In", "Glia-In", "Brain")) processedMat else presentBetaMat
+            intercept <- modelObj$coef[1]
+            weights <- setNames(modelObj$coef[-1], modelObj$probe[-1])
+
+            resultsList[[clockLabel]] <- .calculateLinearPredictor(
+                betaM = targetMat,
+                coefLv = list(intercept, weights),
+                clockName = clockLabel,
+                minCoverage = 0,
+                verbose = FALSE
+            )
+        } else {
+            coefMat <- as.matrix(coef(modelObj))
+            nonzero_idx <- rowSums(coefMat != 0) > 0
+            nonzero_coefs <- coefMat[nonzero_idx, , drop = FALSE]
+
+            intercept <- nonzero_coefs["(Intercept)", 1]
+            probe_weights <- nonzero_coefs[rownames(nonzero_coefs) != "(Intercept)", 1, drop = FALSE]
+            required_cpgs <- rownames(probe_weights)
+
+            commonCpGs <- intersect(required_cpgs, rownames(presentBetaMat))
 
 
-  # return a data.frame (samples x clocks).
-  return(as.data.frame(results.ls, row.names = colnames(data.m)))
+            if (length(commonCpGs) < (length(required_cpgs) * minCoverage)) {
+                resultsList[[clockLabel]] <- rep(NA_real_, ncol(betaM))
+            } else {
+                trimmedBeta <- presentBetaMat[commonCpGs, , drop = FALSE]
+                matched_weights <- probe_weights[commonCpGs, 1]
 
+                pred_vals <- as.vector(t(trimmedBeta) %*% matched_weights) + intercept
+                resultsList[[clockLabel]] <- pred_vals
+            }
+        }
+    }
+
+    return(as.data.frame(resultsList, row.names = colnames(betaM)))
 }
 
-#' @title Internal Preprocessing for CTS Clocks
+
+#' Internal Data Preprocessing for CTS Intrinsic Clocks
+#'
 #' @description
-#' This is an internal helper function for \code{CTS_Clocks}. It preprocesses
-#' the DNAm matrix for 'Intrinsic' clock models. It performs one of two
-#' operations based on \code{dataType}:
-#' \enumerate{
-#'   \item \strong{'sorted'}: Applies Z-score standardization.
-#'   \item \strong{'bulk'}: Calculates residuals by regressing out cell type
-#'     fractions (CTFs), then applies Z-score standardization to the residuals.
+#' Prepares methylation data for 'Intrinsic' clocks (Neu-In, Glia-In, Brain)
+#' by removing extrinsic aging factors (cell composition) and standardizing
+#' the data.
+#'
+#' @details
+#' The processing steps depend on the `dataType`:
+#' \itemize{
+#'   \item \strong{sorted}: Performs row-wise Z-score standardization. This
+#'   assumes the samples are already pure cell types.
+#'   \item \strong{bulk}: Fits a linear model (\code{DNAm ~ cell_type_fractions})
+#'   and extracts the residuals. These residuals represent methylation
+#'   changes independent of cell composition. The residuals are then
+#'   Z-score standardized.
 #' }
 #'
-#' @param data.m A numeric matrix of DNAm (beta) values (CpGs x Samples).
-#' @param dataType Character string: 'bulk' or 'sorted'.
-#' @param tissue Character string: 'brain' or 'otherTissue'.
-#' @param CTF.m An optional numeric matrix of cell type fractions
-#'   (Samples x CellTypes).
-#' @param coreNum Number of cores for parallel \code{mclapply}.
-#' @param verbose Logical. If `TRUE` (default), the function will print
-#'   progress messages to the console.
+#' @param betaM A numeric matrix of methylation beta values (probes x samples).
+#' @param dataType Character, either "bulk" or "sorted".
+#' @param tissue Character, the tissue source of the data.
+#' @param ctfM A numeric matrix of cell type fractions (samples x cell types).
+#' Required if \code{dataType} is "bulk".
+#' @param verbose Logical, whether to display progress messages.
 #'
-#' @return A processed numeric matrix (CpGs x Samples), either Z-scored data
-#'   or Z-scored residuals.
+#' @return A numeric matrix of processed (residuals/Z-scores) methylation values.
 #'
-#' @import HiBED
-#' @importFrom parallel mclapply
-#'
+#' @importFrom stats lm sd
+#' @keywords internal
 #' @noRd
 
+.processCtsData <- function(betaM, dataType, tissue, ctfM, verbose) {
+    if (dataType == "sorted") {
+        # Z-score standardization across samples
+        rowMeansV <- rowMeans(betaM)
+        rowSdsV <- apply(betaM, 1, stats::sd)
+        return((betaM - rowMeansV) / rowSdsV)
+    } else if (dataType == "bulk") {
+        # Here, ctfM is guaranteed to be present (either from user or calculated in main function)
+        if (verbose) message("[CTS] Regressing out cell type effects from subset matrix...")
 
-CTS_Clocks_ProcessData <- function(data.m, dataType = c('bulk', 'sorted'),
-                                   tissue = c('brain', 'otherTissue'), CTF.m = NULL,
-                                   coreNum = coreNum,verbose = TRUE){
+        # Linear model: methylation ~ cell type fractions
+        # Use residuals to isolate cell-intrinsic aging
+        fit <- stats::lm(t(betaM) ~ ctfM)
+        resM <- t(fit$residuals)
 
-  if(dataType == 'sorted'){
-    ## Normalize the data
-    dataSD.v = unlist(parallel::mclapply(1:nrow(data.m),function(i) sd(data.m[i,]), mc.cores = coreNum))
-    dataZ.m = (data.m - rowMeans(data.m))/dataSD.v
-    return(dataZ.m)
-  }else if(dataType == 'bulk'){
-    if (is.null(CTF.m)){
-      if(tissue == 'brain'){
-        ## Estimate the cell type fractions
-        estF.m = HiBED::HiBED_deconvolution(data.m, h=1)
-        estF.m = estF.m/100
-        colnames(estF.m) = c('EndoStrom', 'Glia', 'Neu')
-        estF.m = estF.m[, c('Neu', 'Glia', 'EndoStrom')]
-        CTF.m = as.matrix(estF.m)
-      }else if(tissue == 'otherTissue'){
-        stop("Cell type fraction matrix (CTF.m) is missing. If you don't have it, you are recommended to use R package EpiSCORE, EpiDISH or some other deconvolution algorithms to estimate the cell type fractions of your samples.")
-      }
+        # Standardize Residuals
+        rowMeansR <- rowMeans(resM)
+        rowSdsR <- apply(resM, 1, stats::sd)
+        return((resM - rowMeansR) / rowSdsR)
     }
-    ## Adjust for cell type fractions and normalize the data
-    if (verbose) {
-      print("[CTS_Clocks] Processing the data may take some time. Don't worry.")
-      }
-    lm.o = lm(t(data.m) ~ CTF.m)
-    res.m = t(lm.o$res)
-    resSD.v = unlist(parallel::mclapply(1:nrow(res.m),function(i) sd(res.m[i,]), mc.cores = coreNum))
-    dataZ.m = (res.m - rowMeans(res.m))/resSD.v
-    return(dataZ.m)
-  }
 }
-

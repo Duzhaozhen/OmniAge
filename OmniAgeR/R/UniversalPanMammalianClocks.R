@@ -10,23 +10,21 @@
 #' models, and performs the necessary inverse mathematical transformations
 #' to report age in years.
 #'
-#' @param sample_info A data.frame with sample metadata. Must include
-#'   'Sample' (unique sample ID) and 'SpeciesLatinName' (Latin species name).
-#'   Other columns like 'Age' or 'Tissue' are optional but will be included in the output if present.
-#' @param beta.m A matrix or data.frame of methylation beta values in the format
-#'   CpGs x Samples. Rownames must be CpG identifiers, and column names
-#'   must be sample identifiers ('Sample') matching those in `sample_info`.
-#' @param anage_data A data.frame containing the AnAge database information.
+#' @param betaM A numeric matrix (Rows: CpGs, Cols: Samples).
+#' @param speciesName A character string or vector specifying the Latin species
+#' name(s) (e.g., "Homo sapiens").
+#' @param anageData A data.frame containing the AnAge database information.
 #'   Must include 'SpeciesLatinName', 'GestationTimeInYears',
-#'   'averagedMaturity.yrs', and 'maxAge'. # MODIFIED (Typo fix)
-#' @param verbose A logical value (default: FALSE) indicating whether to print
-#'   detailed progress messages to the console. # NEW
+#'   'averagedMaturity.yrs', and 'maxAge'.
+#' @param minCoverage Numeric (0-1). Minimum required proportion of CpGs present.
+#' Default is 0.
+#' @param verbose Logical. Whether to print status messages.
 #'
 #' @return A data.frame containing the 'Sample', 'SpeciesLatinName',
-#'   and the calculated ages: 'DNAmAgePanMammalianClock1',
-#'   'DNAmAgePanMammalianClock2', 'DNAmAgePanMammalianClock3',
-#'   'DNAmRelativeAge', and 'DNAmRelativeAdultAge'. Any additional columns
-#'   from the input `sample_info` (like 'Age', 'Tissue') will also be returned.
+#'   and the calculated ages: 'DNAmAgePanMammalianClock1','DNAmRelativeAge',
+#'    'DNAmAgePanMammalianClock2', 'DNAmRelativeAdultAge' and
+#'   'DNAmAgePanMammalianClock3'. Any additional columns
+#'   from the input `sampleInfo` (like 'Age', 'Tissue') will also be returned.
 #'
 #' @export
 #'
@@ -38,185 +36,99 @@
 #'
 #'
 #' @examples
-#'
-#' download_OmniAgeR_example("Tursiops_example")
-#' load_OmniAgeR_example("Tursiops_example")
-#' data("anage_data") ## This anage_data is from https://github.com/shorvath/MammalianMethylationConsortium
-#'
-#' # Run the calculation with progress messages
-#'
-#' clock_results <- UniversalPanMammalianClocks(
-#'   sample_info = example_sample_info,
-#'   beta.m = example_beta_m,
-#'   anage_data = anage_data,
-#'   verbose = TRUE #
+#' tursiopsExample <- loadOmniAgeRdata(
+#'     "omniager_tursiops_example",
+#'     verbose = FALSE
 #' )
-
-
-
-UniversalPanMammalianClocks <- function(sample_info,
-                                        beta.m,
-                                        anage_data,
+#'
+#' ## This anage_data is from
+#' ## https://github.com/shorvath/MammalianMethylationConsortium
+#' anageData <- loadOmniAgeRdata(
+#'     "omniager_anage_data",
+#'     verbose = FALSE
+#' )
+#' # Run the calculation with progress messages
+#' clockResults <- universalPanMammalianClocks(
+#'     betaM = tursiopsExample$beta_m,
+#'     speciesName = tursiopsExample$PhenoTypes$SpeciesLatinName,
+#'     anageData = anageData
+#' )
+#'
+universalPanMammalianClocks <- function(betaM,
+                                        speciesName,
+                                        anageData = NULL,
+                                        minCoverage = 0,
                                         verbose = TRUE) {
+    if (verbose) message("[UniversalPanMammalianClocks] Initializing calculation...")
 
-  if (verbose) {
-    print(paste0("[UniversalPanMammalianClocks] Starting Universal Pan-Mammalian Clock calculation..."))
-  }
+    # --- 1. Load Internal Data ---
+    panMammalianClockCoef <- loadOmniAgeRdata(
+        "omniager_pan_mammalian_clock_coef",
+        verbose = verbose
+    )
+    # --- 2. Data Preparation & Merging ---
+    sampleInfo <- data.frame(
+        Sample = colnames(betaM),
+        SpeciesLatinName = speciesName,
+        stringsAsFactors = FALSE
+    )
 
-  data("PanMammalianClockCoef")
+    anageSubset <- anageData[, c(
+        "SpeciesLatinName", "GestationTimeInYears",
+        "averagedMaturity.yrs", "maxAge"
+    )]
+    info <- merge(sampleInfo, anageSubset, by = "SpeciesLatinName", all.x = TRUE)
 
-  # --- 1. Define Internal Helper Functions ---
-  # (Helper functions are unchanged)
-  F2_antitrans_clock2 <- function(y, y.maxAge, y.gestation, const = 1) {
-    x0 = const * exp(-exp(-1 * y))
-    x1 = x0 * (y.maxAge + y.gestation)
-    x = x1 - y.gestation
-    return(x)
-  }
-  F1_logli <- function(age1, m1, m2 = m1, c1 = 1) {
-    ifelse(age1 >= m1, (age1 - m1) / m2, c1 * log((age1 - m1) / m2 / c1 + 1))
-  }
-  F2_revtrsf_clock3 <- function(y.pred, m1, m2 = m1, c1 = 1) {
-    ifelse(y.pred < 0, (exp(y.pred / c1) - 1) * m2 * c1 + m1, y.pred * m2 + m1)
-  }
-  F3_loglifn = function(dat1, b1 = 1, max_tage = 4,
-                        c1 = 5, c2 = 0.38, c0 = 0) {
-    a2 = (dat1$GestationTimeInYears + c0) / (dat1$averagedMaturity.yrs)
-    a_Logli = c1 * a2^c2
-    dat1$a_Logli = a_Logli
-    if ("Age" %in% names(dat1)) {
-      age1 = (dat1$maxAge + dat1$GestationTimeInYears) / (dat1$averagedMaturity.yrs + dat1$GestationTimeInYears)
-      a1 = age1 / (1 + max_tage)
-      dat1$a1_Logli = a1
-      x = dat1$Age + dat1$GestationTimeInYears
-      t2 = dat1$averagedMaturity.yrs * b1 + dat1$GestationTimeInYears
-      x2 = x / t2
-      y = F1_logli(x2, a_Logli, a_Logli)
-      dat1$LogliAge <- y
+    if (any(is.na(info$maxAge))) {
+        missingSp <- unique(info$SpeciesLatinName[is.na(info$maxAge)])
+        warning("[UniversalPanMammalianClocks] Missing AnAge data for species: ", paste(missingSp, collapse = ", "))
     }
-    return(dat1)
-  }
 
-  # --- 2. Define Internal Variable Names ---
+    # The HighmaxAge required for processing Clock 2
+    info$HighmaxAge <- info$maxAge * 1.3
+    info$HighmaxAge[info$SpeciesLatinName %in% c("Homo sapiens", "Mus musculus")] <-
+        info$maxAge[info$SpeciesLatinName %in% c("Homo sapiens", "Mus musculus")]
 
-  y.name <- c('Y.pred1', 'Y.pred2', 'Y.pred3')
-  age.name <- c('DNAmAgePanMammalianClock1', 'DNAmAgePanMammalianClock2', 'DNAmAgePanMammalianClock3')
+    # --- 3. Prediction (Step 1: Linear Scores) ---
+    yNames <- c("Y.pred1", "Y.pred2", "Y.pred3")
 
-  # --- 3. Process Input Data ---
+    for (k in seq_along(yNames)) {
+        modelDf <- panMammalianClockCoef[[k]]
 
-  if (!all(c("SpeciesLatinName", "Sample") %in% names(sample_info))) {
-    stop("[UniversalPanMammalianClocks] `sample_info` must contain 'SpeciesLatinName' and 'Sample' columns.")
-  }
-  if (is.null(rownames(beta.m)) || is.null(colnames(beta.m))) {
-    stop("[UniversalPanMammalianClocks] `beta.m` must have rownames (CpG IDs) and colnames (Sample IDs).")
-  }
-  samples_info <- as.character(sample_info$Sample)
-  samples_beta <- colnames(beta.m)
-  if (!all(samples_info %in% samples_beta)) {
-    missing_in_beta <- samples_info[!samples_info %in% samples_beta]
-    stop(paste("[UniversalPanMammalianClocks] The following samples are in `sample_info` but not in `beta.m` colnames:",
-               paste(missing_in_beta, collapse=", ")))
-  }
+        info[[yNames[k]]] <- .calLinearClock(
+            betaM = betaM[, info$Sample, drop = FALSE],
+            coefData = modelDf,
+            clockLabel = paste0("PanMammalian_Clock", k),
+            minCoverage = minCoverage,
+            verbose = verbose
+        )
+    }
 
-  # Assign inputs to internal variable names
-  info <- sample_info
-  anage <- anage_data
-  dat.meth0 <- beta.m
-  glmnet.list <- PanMammalianClockCoef # Uses the object from the package's data
+    # --- 4. Post-Processing (Step 2: Inverse Transformations) ---
+    if (verbose) message("[UniversalPanMammalianClocks] Applying age transformations...")
 
-  # (Step 1) Merge AnAge data into sample info
-  info <- merge(by = 'SpeciesLatinName', info,
-                subset(anage, select = c(SpeciesLatinName, GestationTimeInYears,
-                                         averagedMaturity.yrs, maxAge)))
+    # Clock 1: Simple log-linear
+    info$DNAmAgePanMammalianClock1 <- exp(info$Y.pred1) - 2
 
-  # (Step 2) Generate HighmaxAge variable (for Clock 2)
-  MYMAX <- 1.3
-  info$HighmaxAge <- MYMAX * info$maxAge
-  info$HighmaxAge[info$SpeciesLatinName == 'Homo sapiens'] <- info$maxAge[info$SpeciesLatinName == 'Homo sapiens']
-  info$HighmaxAge[info$SpeciesLatinName == 'Mus musculus'] <- info$maxAge[info$SpeciesLatinName == 'Mus musculus']
+    # Clock 2: Relative Age
+    info$DNAmRelativeAge <- exp(-exp(-info$Y.pred2))
 
-  # (Step 3) Prepare methylation data
+    info$DNAmAgePanMammalianClock2 <- info$DNAmRelativeAge * (info$HighmaxAge + info$GestationTimeInYears) - info$GestationTimeInYears
 
-  mycpgs <- unique(c(glmnet.list[[1]]$prob,
-                     glmnet.list[[2]]$prob,
-                     glmnet.list[[3]]$prob))
-  mycpgs <- mycpgs[mycpgs != 'Intercept']
+    # Clock 3: Relative Adult Age
 
-  # Check for missing CpGs
-  missing_cpgs <- setdiff(mycpgs, rownames(dat.meth0))
+    a2 <- info$GestationTimeInYears / info$averagedMaturity.yrs
+    m1 <- 5 * (a2^0.38)
 
-  if (verbose) {
-    print(paste0(
-      "[UniversalPanMammalianClocks] Number of represented UniversalPanMammalianClocks CpGs (max=",
-      length(mycpgs), ")=", length(mycpgs)-length(missing_cpgs)))
-  }
+    # Reversal conversion Clock 3
+    y3 <- info$Y.pred3
+    relAdultAge <- ifelse(y3 < 0, (exp(y3) - 1) * m1 + m1, y3 * m1 + m1)
 
+    info$DNAmRelativeAdultAge <- relAdultAge
+    info$DNAmAgePanMammalianClock3 <- relAdultAge * (info$averagedMaturity.yrs + info$GestationTimeInYears) - info$GestationTimeInYears
 
+    # --- 5. Return Output ---
+    finalResults <- info[, setdiff(names(info), c("Y.pred1", "Y.pred2", "Y.pred3", "HighmaxAge"))]
 
-  if (length(missing_cpgs) > 0) {
-    # This warning will fire regardless of 'verbose' setting, which is good.
-    warning(paste("[UniversalPanMammalianClocks] The following required CpGs are missing from `beta.m` rownames and will be treated as having NA values:",
-                  paste(missing_cpgs, collapse=", ")))
-    missing_mat <- matrix(NA_real_,
-                          nrow = length(missing_cpgs),
-                          ncol = ncol(dat.meth0),
-                          dimnames = list(missing_cpgs, colnames(dat.meth0)))
-    dat.meth0 <- rbind(dat.meth0, missing_mat)
-  }
-
-  dat.meth0_filtered <- dat.meth0[mycpgs, , drop = FALSE]
-  dat.meth <- as.data.frame(t(dat.meth0_filtered))
-  dat.meth$Sample <- rownames(dat.meth)
-  dat.meth$Intercept <- 1
-
-  # (Step 4) Merge methylation data with info
-  info <- merge(by = 'Sample', info, dat.meth, all.x = TRUE)
-
-
-  # --- 4. Run Predictions ---
-  for (k in 1:3) {
-    glmnet_model <- glmnet.list[[k]]
-    model_vars <- as.character(glmnet_model$prob)
-    model_coefs <- glmnet_model$coef
-
-    info_subset_matrix <- as.matrix(info[, model_vars])
-    info_subset_matrix[is.na(info_subset_matrix)] <- 0
-
-    info[, y.name[k]] <- as.numeric(info_subset_matrix %*% model_coefs)
-  }
-
-  # --- 5. Inverse Transform Predictions to Age ---
-  # (1) Clock 1
-  info[, age.name[1]] <- exp(info[, y.name[1]]) - 2
-
-  # (2) Clock 2
-  info$DNAmRelativeAge <- exp(-exp(-1 * info[, y.name[2]]))
-  info[, age.name[2]] <- F2_antitrans_clock2(info[, y.name[2]],
-                                             info$HighmaxAge,
-                                             info$GestationTimeInYears,
-                                             const = 1)
-
-  # (3) Clock 3
-  info <- F3_loglifn(info)
-  info$m1 <- info$a_Logli
-
-  info$DNAmRelativeAdultAge <- F2_revtrsf_clock3(info[, y.name[3]], info$m1)
-
-  info[, age.name[3]] <-
-    info$DNAmRelativeAdultAge * (info$averagedMaturity.yrs + info$GestationTimeInYears) - info$GestationTimeInYears
-
-  # --- 6. Format and Return Output ---
-
-  output_cols <- c('Sample', 'SpeciesLatinName', 'MammalNumberHorvath', 'Age', 'Tissue',
-                   'DNAmRelativeAge', 'DNAmRelativeAdultAge', age.name)
-
-  available_cols <- intersect(output_cols, names(info))
-
-  output <- info[, available_cols]
-  return(output)
+    return(finalResults)
 }
-
-
-
-
-

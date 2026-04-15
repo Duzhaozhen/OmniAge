@@ -1,49 +1,89 @@
 #' @title Compute a DNAm-based Smoking Index
 #'
 #' @description
-#' Computes a DNA methylation-based smoking index (S-index) using 1,501 smoking-associated 
-#' CpG sites. This index has been shown to correlate with cancer risk across multiple 
+#' Computes a DNA methylation-based smoking index (S-index) using 1,501 smoking-associated
+#' CpG sites. This index has been shown to correlate with cancer risk across multiple
 #' tissues and provides a robust epigenetic signature of smoking exposure.
 #'
 #' @details
-#' The function calculates the score by first standardizing the methylation data (z-score 
-#' transformation) across samples for each CpG site, and then computing a weighted 
+#' The function calculates the score by first standardizing the methylation data (z-score
+#' transformation) across samples for each CpG site, and then computing a weighted
 #' average based on the provided signature coefficients.
 #'
-#' @param data.m A numeric matrix of normalized DNA methylation data (e.g.,
-#'   beta values from BMIQ). Rows must be CpG probes (with rownames matching
-#'   the IDs in `coeffSmkIdx.v`) and columns must be samples.
+#' @param betaM A numeric matrix of beta values. Rows should be CpG probes and
+#' columns should be individual samples.
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.
+#' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
-#' @return A named \code{numeric} vector of smoking index for each sample in \code{data.m}.
+#' @return A named \code{numeric} vector of smoking index for each sample
+#' in \code{data.m}.
 #'
 #'
 #' @importFrom stats sd
 #' @export
 #'
 #' @references
-#' Teschendorff, Andrew E et al. 
-#' Correlation of Smoking-Associated DNA Methylation Changes in Buccal Cells With DNA Methylation Changes in Epithelial Cancer
+#' Teschendorff, Andrew E et al.
+#' Correlation of Smoking-Associated DNA Methylation Changes in Buccal Cells
+#' With DNA Methylation Changes in Epithelial Cancer
 #' \emph{JAMA oncology} 2015
-#' 
-#' 
-#' @examples
-#' download_OmniAgeR_example("Hannum_example")
-#' load_OmniAgeR_example("Hannum_example")
-#' CompSmokeIndex_o <- CompSmokeIndex(hannum_bmiq_m)
 #'
+#'
+#' @examples
+#' hannumBmiqM <- loadOmniAgeRdata(
+#'     "omniager_hannum_example",
+#'     verbose = FALSE
+#' )[[1]]
+#' SmokeIndexOut <- compSmokeIndex(hannumBmiqM)
+#'
+compSmokeIndex <- function(betaM, minCoverage = 0, verbose = TRUE) {
+    coeffSmkIdx <- loadOmniAgeRdata(
+        "omniager_coeff_smk_idx",
+        verbose = verbose
+    )
 
-CompSmokeIndex <- function(data.m){
-  data("coeffSmkIdx");
-  common.v <- intersect(rownames(data.m),names(coeffSmkIdx.v));
-  #print(paste("Found a fraction of ",length(common.v)/length(coeffSmkIdx.v)," of probes",sep=""));
-  cat(paste0("[CompSmokeIndex] Number of represented CompSmokeIndex CpGs (max=",(length(coeffSmkIdx.v)),")=",
-             length(common.v),"\n"))
-  tmp.m <- data.m[match(common.v,rownames(data.m)),];
-  sign.v <- coeffSmkIdx.v[match(common.v,names(coeffSmkIdx.v))];
-  av.v <- rowMeans(tmp.m);
-  sd.v <- apply(tmp.m,1,sd);
-  v.idx <- which(sd.v>0);
-  z.m <- (tmp.m[v.idx,]-av.v[v.idx])/sd.v[v.idx];
-  si.v <- colMeans(sign.v[v.idx]*z.m);
-  return(si.v);
+    # Perform coverage check
+    coverage <- .checkCpGCoverage(
+        betaM = betaM,
+        allWeights = coeffSmkIdx,
+        clockName = "SmokeIndex",
+        minCoverage = minCoverage,
+        verbose = verbose
+    )
+
+    if (!coverage$pass) {
+        scores <- rep(NA_real_, ncol(betaM))
+        names(scores) <- colnames(betaM)
+        return(scores)
+    }
+
+
+    subBeta <- betaM[coverage$betaIdx, , drop = FALSE]
+    weights <- coverage$weightsSubset
+
+    # Z-score
+    rowMeansV <- rowMeans(subBeta, na.rm = TRUE)
+    rowSdsV <- apply(subBeta, 1, sd, na.rm = TRUE)
+
+    keepIdx <- which(rowSdsV > 0)
+    if (length(keepIdx) < length(rowSdsV)) {
+        if (verbose) {
+            message(sprintf(
+                "[SmokeIndex] Excluding %d constant probes.",
+                length(rowSdsV) - length(keepIdx)
+            ))
+        }
+        subBeta <- subBeta[keepIdx, , drop = FALSE]
+        rowMeansV <- rowMeansV[keepIdx]
+        rowSdsV <- rowSdsV[keepIdx]
+        weights <- weights[keepIdx]
+    }
+
+    zMatrix <- (subBeta - rowMeansV) / rowSdsV
+
+    # Calculate the final score
+    scores <- colMeans(weights * zMatrix, na.rm = TRUE)
+
+    return(scores)
 }

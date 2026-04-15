@@ -5,67 +5,94 @@
 #' based on predefined CpG signatures and a normalized DNA methylation matrix.
 #'
 #' @details
-#' For each CHIP signature (e.g., DNMT3A, TET2), it identifies common CpGs, calculates Z-scores for each
+#' For each CHIP signature (e.g., DNMT3A, TET2), it identifies common CpGs,
+#' calculates Z-scores for each
 #' probe across all samples, and then computes the score as:
 #' (Mean Z-score of positive probes) - (Mean Z-score of negative probes).
 #'
 #' Probes with zero variance across samples are excluded.
 #'
-#' @param nbeta.m A numeric matrix of normalized DNA methylation data (e.g.,
-#'   beta values from BMIQ). Rows must be CpG probes (with rownames matching
-#'   the IDs in `chipCpG.lv`) and columns must be samples.
+#' @param betaM A numeric matrix of DNAm beta values (probes as rows). Rows
+#' should be Illumina 450k/EPIC CpG identifiers and columns should be samples.
+#' @param minCoverage Numeric (0-1). Minimum required probe coverage.
+#'   Default is 0.
+#' @param verbose Logical. Whether to print coverage statistics.
 #'
 #' @return
-#' A list of the same length as `chipCpG.lv`. Each element is a numeric
-#' vector containing the calculated CHIP score for each sample (in the same
-#' order as the columns of `nbeta.m`).
+#' A \code{list} of numeric vectors, one for each CHIP signature.
 #'
 #' @importFrom stats sd
+#'
+#' @references
+#' Kirmani, S., Huan, T., Van Amburg, J.C. et al.
+#' Epigenome-wide DNA methylation association study of CHIP provides insight
+#' into perturbed gene regulation.
+#' \emph{Nat Commun} 2025
+#'
 #' @export
 #'
 #' @examples
-#' download_OmniAgeR_example("Hannum_example")
-#' load_OmniAgeR_example("Hannum_example")
-#' CompCHIP.o <- CompCHIP(hannum_bmiq_m)
-#'
+#' hannumBmiqM <- loadOmniAgeRdata(
+#'     "omniager_hannum_example",
+#'     verbose = FALSE
+#' )[[1]]
+#' compchipOut <- compCHIP(hannumBmiqM)
+compCHIP <- function(betaM, minCoverage = 0, verbose = TRUE) {
+    chipCpGList <- loadOmniAgeRdata(
+        "omniager_chip_cpg",
+        verbose = verbose
+    )
 
+    scoreList <- list()
 
-CompCHIP <- function(nbeta.m){
-  data("chipCpG")
-  score.lv <- list();
-  for(i in 1:length(chipCpG.lv)){
-    common.v <- intersect(names(chipCpG.lv[[i]]),rownames(nbeta.m));
-    print(paste0("[CHIP] Number of represented ", names(chipCpG.lv)[i], " CpGs (max=",
-                   length(chipCpG.lv[[i]]), ")=", length(common.v)))
+    for (i in seq_along(chipCpGList)) {
+        sigName <- names(chipCpGList)[i]
+        sigWeights <- chipCpGList[[i]]
 
+        # 1. Perform coverage check
+        coverage <- .checkCpGCoverage(
+            betaM = betaM,
+            allWeights = sigWeights,
+            clockName = sigName,
+            minCoverage = minCoverage,
+            verbose = verbose
+        )
 
-    #print(paste("A fraction ",length(common.v)/length(chipCpG.lv[[i]])," of CRP probes have been found. Number found is=",length(common.v),sep=""));
-    match(common.v,names(chipCpG.lv[[i]])) -> map1.idx;
-    match(common.v,rownames(nbeta.m)) -> map2.idx;
-    tmp.m <- nbeta.m[map2.idx,];
-    sd.v <- apply(tmp.m,1,sd);
-    z.m <- (tmp.m - rowMeans(tmp.m))/sd.v;
-    sign.v <- sign(chipCpG.lv[[i]][map1.idx]);
-    pos.idx <- which(sign.v==1);
-    neg.idx <- which(sign.v==-1);
-    scoreP.v <- rep(0,ncol(tmp.m));
-    scoreN.v <- rep(0,ncol(tmp.m));
-    if(length(pos.idx)==1){
-      scoreP.v <- z.m[pos.idx,];
+        if (!coverage$pass) {
+            scoreList[[sigName]] <- rep(NA_real_, ncol(betaM))
+            next
+        }
+
+        # 2. Extract the matching data and symbols
+        subBeta <- betaM[coverage$betaIdx, , drop = FALSE]
+        matchedSigns <- sign(coverage$weightsSubset)
+
+        # 3. Z-score
+        rowMeansV <- rowMeans(subBeta, na.rm = TRUE)
+        rowSdsV <- apply(subBeta, 1, sd, na.rm = TRUE)
+
+        zeroVarIdx <- which(rowSdsV == 0)
+        if (length(zeroVarIdx) > 0) {
+            if (verbose) message(sprintf("[%s] Excluding %d constant probes.", sigName, length(zeroVarIdx)))
+            subBeta <- subBeta[-zeroVarIdx, , drop = FALSE]
+            rowMeansV <- rowMeansV[-zeroVarIdx]
+            rowSdsV <- rowSdsV[-zeroVarIdx]
+            matchedSigns <- matchedSigns[-zeroVarIdx]
+        }
+
+        # Z = (X - Mean) / SD
+        zMatrix <- (subBeta - rowMeansV) / rowSdsV
+
+        # 4. Calculate the mean value in groups
+        posIdx <- which(matchedSigns == 1)
+        negIdx <- which(matchedSigns == -1)
+
+        scoreP <- if (length(posIdx) > 0) colMeans(zMatrix[posIdx, , drop = FALSE]) else 0
+        scoreN <- if (length(negIdx) > 0) colMeans(zMatrix[negIdx, , drop = FALSE]) else 0
+
+        # 5. Calculate the final score
+        scoreList[[sigName]] <- scoreP - scoreN
     }
-    else if (length(pos.idx)>1){
-      scoreP.v <- colMeans(z.m[pos.idx,]);
-    }
 
-    if(length(neg.idx)==1){
-      scoreN.v <- z.m[neg.idx,];
-    }
-    else if (length(neg.idx)>1){
-      scoreN.v <- colMeans(z.m[neg.idx,]);
-    }
-
-    score.lv[[i]] <- scoreP.v - scoreN.v;
-  }
-  names(score.lv) <- names(chipCpG.lv);
-  return(score.lv);
-} ### EOF
+    return(scoreList)
+}

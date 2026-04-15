@@ -2,6 +2,9 @@ import os
 import glob
 import pandas as pd
 import numpy as np
+from .base import BaseLinearClock
+from ..utils import load_clock_coefs
+from typing import Optional, Union, List, Dict
 
 class CompSmokeIndex:
     """
@@ -24,7 +27,7 @@ class CompSmokeIndex:
         "species": "Human",
         "tissue": "Multi-tissue",
         "omic type": "DNAm(450k)",
-        "prediction": "Smoking Index",
+        "prediction": "smoking index",
         "source": "https://doi.org/10.1001/jamaoncol.2015.1053"
     }
 
@@ -100,3 +103,43 @@ class CompSmokeIndex:
         scores = Z.multiply(w, axis=0).mean(axis=0)
         
         return pd.DataFrame(scores, columns=[self.name])
+
+
+
+class HepatoXuRisk(BaseLinearClock):
+    """
+    HepatoXu ctDNA Methylation Scores for Hepatocellular Carcinoma
+    Attributes:
+        intercept (float): Model offset.
+        weights (pd.Series): Coefficients for the 10 CpGs.
+
+    References:
+        Xu, Rh., Wei, W., Krawczyk, M. et al. Circulating tumour DNA methylation markers for diagnosis and prognosis of hepatocellular carcinoma.
+        Nature Mater(2017) https://doi.org/10.1038/nmat4997
+    """
+    METADATA = {
+        "year": 2024,
+        "species": "Human",
+        "tissue": "Plasma (cfDNA)",
+        "omic type": "Targeted DNAm Sequencing",
+        "prediction": "risk score",
+        "source": "https://doi.org/10.1038/nmat4997"
+    }
+
+    def __init__(self, coef_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize the HepatoXuRisk model.
+        
+        Args:
+            coef_df: Optional DataFrame containing model coefficients (CpG IDs and weights).
+                If None, the default 'HepatoXu.csv' will be loaded from the package data.
+        """
+        # 1. Automatic loading logic
+        if coef_df is None:
+            # Attempts to locate 'HepatoXu.csv' within the internal data directory
+            coef_df = load_clock_coefs("HepatoXu")
+            
+        # 2. Initialize the base class
+        super().__init__(coef_df, name="HepatoXu",metadata=self.METADATA)
+
+   

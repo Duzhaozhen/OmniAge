@@ -4,18 +4,66 @@
 \alias{scImmuAgingCalculator}
 \title{predict age for each individual}
 \usage{
-scImmuAgingCalculator(preprocessed_df, model, marker_gene)
+scImmuAgingCalculator(
+  preprocessedData,
+  model,
+  markerGenes,
+  minCoverage = 0.5,
+  verbose = TRUE
+)
 }
 \arguments{
-\item{preprocessed_df}{the output from scImmuAging_PreProcess() function.}
+\item{preprocessedData}{the output from scImmuAging_PreProcess() function.}
 
 \item{model}{the cell type aging clock model}
 
-\item{marker_gene}{selected marker genes from the corresponding model}
+\item{markerGenes}{selected marker genes from the corresponding model}
+
+\item{minCoverage}{A numeric value (0-1). The minimum proportion of
+required genes that must be present. Default is 0.5.}
+
+\item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
 \value{
 Return dataframe of predicted age
 }
 \description{
 predict age for each individual
+}
+\examples{
+library(glmnet)
+
+# 1. Create a tiny mock preprocessed dataset (3 donors, 4 genes)
+mock_preprocessed <- data.frame(
+    donorId = c("Donor1", "Donor2", "Donor3"),
+    age = c(25, 45, 65),
+    GeneA = c(1.2, 1.5, 2.1),
+    GeneB = c(0.8, 0.9, 1.1),
+    GeneC = c(3.3, 2.8, 1.5),
+    GeneD = c(0.1, 0.5, 0.9)
+)
+
+# 2. Train a valid mock cv.glmnet model
+set.seed(123)
+# Generate 30 rows of random data to avoid cross-validation warnings
+X_train <- matrix(rnorm(120), nrow = 30, ncol = 4)
+colnames(X_train) <- c("GeneA", "GeneB", "GeneC", "GeneD")
+
+# Create a fake linear relationship so the model learns non-zero coefficients
+Y_train <- 40 + (5 * X_train[, "GeneA"]) - (3 * X_train[, "GeneB"]) + rnorm(30)
+mock_model <- cv.glmnet(X_train, Y_train)
+
+# 3. Define the marker genes expected by the model
+mock_markers <- c("GeneA", "GeneB", "GeneC", "GeneD")
+
+# 4. Run the calculator function
+result <- scImmuAgingCalculator(
+    preprocessedData = mock_preprocessed,
+    model = mock_model,
+    markerGenes = mock_markers,
+    verbose = FALSE
+)
+
+# 5. View the output
+print(result)
 }

@@ -1,25 +1,32 @@
 #' @title Calculate GrimAge2
 #'
 #' @description
-#' Calculates DNA methylation GrimAge2, a composite biomarker of mortality risk and biological aging. This function implements the updated GrimAge2 model.
+#' Calculates DNA methylation GrimAge2, a composite biomarker of mortality risk
+#' and biological aging. This function implements the updated GrimAge2 model.
 #'
-#'@details
-#' This function calculates DNAm GrimAge2 in a multi-step process. First, it predicts DNAm-based surrogate biomarkers for several plasma proteins from the input beta values. These predicted biomarkers, along with chronological age and sex, are then used to calculate a composite mortality risk score. This score is calibrated to the scale of chronological age to produce the final `DNAmGrimAge2`.
+#' @details
+#' This function calculates DNAm GrimAge2 in a multi-step process. First, it
+#' predicts DNAm-based surrogate biomarkers for several plasma proteins from
+#' the input beta values. These predicted biomarkers, along with chronological
+#' age and sex, are then used to calculate a composite mortality risk score.
+#' This score is calibrated to the scale of chronological age to produce the
+#' final `DNAmGrimAge2`.
 #'
-#' @param beta_matrix A numeric matrix of DNA methylation beta values. Rows should
+#' @param betaM A numeric matrix of DNA methylation beta values. Rows should
 #'   represent CpG sites and columns should represent individual samples.
 #' @param age A numeric vector of chronological ages for the samples corresponding
-#'   to the columns in `beta_matrix`.
+#'   to the columns in `betaM`.
 #' @param sex A character vector of sample sexes. Must contain "Male" or "Female"
 #'   for each sample.
-#'
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.
+#' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #' @return
 #' A data.frame containing the following columns:
 #' \itemize{
-#'   \item `Sample`: Identifier for each sample.
-#'   \item `Age`: The input chronological age.
-#'   \item `Female`: A numeric indicator for sex (1 = Female, 0 = Male).
-#'   \item `DNAm...`: Columns for each of the predicted surrogate biomarkers (e.g., `DNAmADM`, `DNAmGDF15`).
+#'   \item `SampleID`: Identifier for each sample.
+#'   \item `DNAm...`: Columns for each of the predicted surrogate biomarkers
+#'   (e.g., `DNAmADM`, `DNAmGDF15`).
 #'   \item `DNAmGrimAge2`: The final calibrated GrimAge2 score.
 #' }
 #'
@@ -33,114 +40,114 @@
 #' @export
 #'
 #' @examples
-#' download_OmniAgeR_example("Hannum_example")
-#' load_OmniAgeR_example("Hannum_example")
-#' age <- PhenoTypesHannum_lv$Age
-#' sex <- ifelse(PhenoTypesHannum_lv$Sex=="F","Female","Male")
-#' GrimAge2.out <- GrimAge2(beta_matrix = hannum_bmiq_m,age,sex)
+#' hannumExample <- loadOmniAgeRdata(
+#'     "omniager_hannum_example",
+#'     verbose = FALSE
+#' )
+#' hannumBmiqM <- hannumExample[[1]]
+#' phenoTypesHannum <- hannumExample[[2]]
+#' age <- phenoTypesHannum$Age
+#' sex <- ifelse(phenoTypesHannum$Sex == "F", "Female", "Male")
+#' GrimAge2Oout <- grimAge2(betaM = hannumBmiqM, age, sex)
+grimAge2 <- function(betaM, age, sex,
+                     minCoverage = 0, verbose = TRUE) {
+    # 1. Load the model file
+    grimage2 <- loadOmniAgeRdata(
+        "omniager_grimage2_model",
+        verbose = verbose
+    )
+    # 2. Extract coefficients from model object (grimage2)
+    protCoefs <- grimage2[[1]] # CpG weights for proteins/biomarkers
+    finalModel <- grimage2[[2]] # Final weights for COX
+    calibParams <- grimage2[[3]] # Calibration parameters (gold standard)
 
-##################################################
-#
-################################################
+    uqCpgs <- unique(protCoefs$var[startsWith(protCoefs$var, "cg")])
+    fakeWeights <- setNames(rep(1, length(uqCpgs)), uqCpgs)
+    coverage <- .checkCpGCoverage(betaM, fakeWeights, "GrimAge2", minCoverage, verbose)
+    # 3. Handle Covariates
+    femaleVec <- ifelse(sex == "Female", 1, 0)
 
-GrimAge2 <- function(beta_matrix,age,sex) {
-  # Load the model file
-  data("GrimAge2CpG")
-  cpgs <- grimage2[[1]]          # CpG sites and coefficients
-  glmnet.final1 <- grimage2[[2]] # Final model parameters
-  gold <- grimage2[[3]]          # Calibration parameters
+    # 4. Phase 1: Predict Surrogate Biomarkers
+    # Identify available CpGs (no imputation used)
+    availableCpGs <- intersect(protCoefs$var, rownames(betaM))
 
-  # --- CpG Coverage Calculation ---
-  # 1. Get the list of all CpG probes required by the model (excluding non-CpG variables)
-  required_cpgs_list <- setdiff(cpgs$var, c("Intercept", "Age"))
-  n_required_cpgs <- length(required_cpgs_list)
-
-  available_cpgs_in_data <- intersect(required_cpgs_list, rownames(beta_matrix))
-  n_available_cpgs <- length(available_cpgs_in_data)
-  print(paste0("[GrimAge2] Number of represented GrimAge2 CpGs (max=",n_required_cpgs,")=",
-             n_available_cpgs))
-
-  # Transpose beta_matrix so that samples are rows and CpGs are columns
-  dat_meth <- as.data.frame(t(beta_matrix))
-
-  # Handle sex: Convert 'sex' to 'Female' (1 for female, 0 for male)
-  Female <- ifelse(sex == "Female", 1, 0)
-  sample_info <- data.frame(Sample=colnames(beta_matrix),Age=age,Female=Female)
-  # Merge sample information
-  dat_meth <- cbind(dat_meth, sample_info)
-
-  # Add 'Intercept' column
-  dat_meth$Intercept <- 1
-
-  # Filter for CpG sites required by the model that are present in beta_matrix
-  available_cpgs <- intersect(cpgs$var, colnames(dat_meth))
-  cpgs <- subset(cpgs, var %in% c(available_cpgs,"Intercept","Age"))
-
-  # Generate DNAm protein predictors
-  Ys <- unique(cpgs$Y.pred)
-  for (k in 1:length(Ys)) {
-    cpgs1 <- subset(cpgs, Y.pred == Ys[k])
-    if (nrow(cpgs1) > 0) {
-      Xs <- dat_meth[, cpgs1$var, drop = FALSE]
-      Y.pred <- as.numeric(as.matrix(Xs) %*% cpgs1$beta)
-      dat_meth[, Ys[k]] <- Y.pred
+    if (verbose) {
+        nTotalCpGs <- length(setdiff(unique(protCoefs$var), c("Intercept", "Age")))
+        message(sprintf(
+            "[GrimAge2] Found %d / %d required CpGs (%.1f%%).",
+            length(availableCpGs), nTotalCpGs, (length(availableCpGs) / nTotalCpGs) * 100
+        ))
     }
-  }
 
-  # Filter variables in glmnet.final1 to keep only those present in dat_meth
-  available_vars <- intersect(glmnet.final1$var, colnames(dat_meth))
-  glmnet.final1 <- subset(glmnet.final1, var %in% available_vars)
+    proteinNames <- unique(protCoefs$Y.pred)
+    protPredList <- list()
 
-  # Generate the raw GrimAge2 variable ('COX')
-  if (length(available_vars) > 0) {
-    output.all <- dat_meth[, c('Sample', 'Age', 'Female', Ys)]
-    output.all$COX <- as.numeric(as.matrix(output.all[, available_vars, drop = FALSE]) %*% glmnet.final1$beta)
-  } else {
-    stop("[GrimAge2] No available variables to calculate 'COX'")
-  }
+    # Optimized matrix multiplication for protein prediction
+    for (pName in proteinNames) {
+        pSub <- protCoefs[protCoefs$Y.pred == pName, ]
+        presentVars <- intersect(pSub$var, c(availableCpGs, "Intercept", "Age"))
+        pSubValid <- pSub[pSub$var %in% presentVars, ]
 
-  # Calibrate 'COX' to 'DNAmGrimAge2'
-  F_scale <- function(INPUT0, Y.pred0.name, Y.pred.name, gold) {
-    out.para <- subset(gold, var == 'COX')
-    out.para.age <- subset(gold, var == 'Age')
-    m.age <- out.para.age$mean
-    sd.age <- out.para.age$sd
-    Y0 <- INPUT0[, Y.pred0.name]
-    Y <- (Y0 - out.para$mean) / out.para$sd
-    INPUT0[, Y.pred.name] <- as.numeric((Y * sd.age) + m.age)
-    return(INPUT0)
-  }
-  output.all <- F_scale(output.all, 'COX', 'DNAmGrimAge2', gold)
+        # Calculate scores based on original logic: sum of available features
+        # Start with Intercept
+        score <- if ("Intercept" %in% pSubValid$var) pSubValid$beta[pSubValid$var == "Intercept"] else 0
 
-  # Calculate age acceleration 'AgeAccelGrim2'
-  #output.all$DNAmtemp <- output.all[, 'DNAmGrimAge2']
-  #output.all[, 'AgeAccelGrim2'] <- residuals(lm(DNAmtemp ~ Age, data = output.all, na.action = na.exclude))
-  #output.all$DNAmtemp <- NULL
-  output.all$COX <- NULL
+        # Add Age effect if model requires it
+        if ("Age" %in% pSubValid$var) {
+            score <- score + (pSubValid$beta[pSubValid$var == "Age"] * age)
+        }
 
-  # Rename variables
-  old.name <- c('DNAmadm', 'DNAmCystatin_C', 'DNAmGDF_15', 'DNAmleptin',
-                'DNAmpai_1', 'DNAmTIMP_1', 'DNAmlog.CRP', 'DNAmlog.A1C')
-  new.name <- c('DNAmADM', 'DNAmCystatinC', 'DNAmGDF15', 'DNAmLeptin',
-                'DNAmPAI1', 'DNAmTIMP1', 'DNAmlogCRP', 'DNAmlogA1C')
-  for (k in 1:length(old.name)) {
-    if (old.name[k] %in% names(output.all)) {
-      names(output.all)[names(output.all) == old.name[k]] <- new.name[k]
+        # Add CpG effect (matrix multiplication)
+        cpgVars <- intersect(pSubValid$var, availableCpGs)
+        if (length(cpgVars) > 0) {
+            # Use crossprod or %*% for efficiency. t(betaM) matches samples to rows.
+            score <- score + as.vector(t(betaM[cpgVars, , drop = FALSE]) %*%
+                pSubValid$beta[match(cpgVars, pSubValid$var)])
+        }
+
+        protPredList[[pName]] <- score
     }
-  }
 
-  return(output.all)
+    protDf <- as.data.frame(protPredList)
+
+    # 5. Phase 2: Calculate Combined Risk Score (COX)
+    # Features: Age, Female, and predicted DNAm Biomarkers
+    finalInput <- cbind(Age = age, Female = femaleVec, protDf)
+    finalInput$Intercept <- 1
+
+    # Strictly follow original variable matching
+    availableFinalVars <- intersect(finalModel$var, colnames(finalInput))
+    finalWeightsSub <- finalModel[match(availableFinalVars, finalModel$var), ]
+
+    coxScore <- as.numeric(as.matrix(finalInput[, availableFinalVars]) %*% finalWeightsSub$beta)
+
+    # 6. Phase 3: Calibration to Chronological Age
+    #
+    coxParams <- calibParams[calibParams$var == "COX", ]
+    ageParams <- calibParams[calibParams$var == "Age", ]
+
+    zCox <- (coxScore - coxParams$mean) / coxParams$sd
+    grimAge2Score <- (zCox * ageParams$sd) + ageParams$mean
+
+    # 7. Final Formatting and Renaming
+    res <- data.frame(
+        SampleID = colnames(betaM),
+        protDf,
+        DNAmGrimAge2 = grimAge2Score,
+        stringsAsFactors = FALSE
+    )
+
+    # Rename according to original requirements
+    renameMap <- c(
+        "DNAmadm" = "DNAmADM", "DNAmCystatin_C" = "DNAmCystatinC",
+        "DNAmGDF_15" = "DNAmGDF15", "DNAmleptin" = "DNAmLeptin",
+        "DNAmpai_1" = "DNAmPAI1", "DNAmTIMP_1" = "DNAmTIMP1",
+        "DNAmlog.CRP" = "DNAmlogCRP", "DNAmlog.A1C" = "DNAmlogA1C"
+    )
+
+    names(res) <- ifelse(names(res) %in% names(renameMap),
+        renameMap[names(res)], names(res)
+    )
+
+    return(res)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

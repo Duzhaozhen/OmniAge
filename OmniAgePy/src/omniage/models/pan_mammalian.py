@@ -198,8 +198,7 @@ class PanMammalianClock:
         if missing_cols:
             raise ValueError(error_msg_template.format(status=f"Missing columns: {missing_cols}"))
 
-        # ... (Rest of your execution logic) ...
-        # (Check valid samples, merge AnAge, loop models, inverse transform...)
+        # Check valid samples, merge AnAge, loop models, inverse transform...
         
         if self.anage_df is None or not self.models:
             print("[Error] Missing dependencies (AnAge DB or Model Coefs). Returning empty.")

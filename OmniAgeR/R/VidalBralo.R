@@ -10,15 +10,17 @@
 #' based on 8 specific CpG sites.
 #'
 #'
-#' @param beta.m A numeric matrix of DNA methylation beta values.
-#'   **Rows must correspond to samples and columns to CpGs.**
-#'   `rownames` (sample IDs) and `colnames` (CpG probe IDs) are required.
+#' @param betaM A numeric matrix of DNA methylation beta values.
+#'   `rownames` (CpG probe IDs) and `colnames` (Sample IDs) are required.
 #'   The matrix should not contain `NA` values.
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.
+#' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return
 #' A **numeric vector** containing the predicted chronological age (in years)
 #' for each sample. The vector is named with the sample IDs from the `rownames`
-#' of `beta.m`.
+#' of `betaM`.
 #'
 #' @export
 #'
@@ -28,33 +30,22 @@
 #' \emph{Front Genet.} 2016
 #'
 #' @examples
-#' download_OmniAgeR_example("Hannum_example")
-#' load_OmniAgeR_example("Hannum_example")
-#' VidalBralo.out <- VidalBralo(hannum_bmiq_m)
+#' hannumBmiqM <- loadOmniAgeRdata(
+#'     "omniager_hannum_example",
+#'     verbose = FALSE
+#' )[[1]]
+#' vidalBraloClockOut <- vidalBraloClock(hannumBmiqM)
+vidalBraloClock <- function(betaM,
+                            minCoverage = 0,
+                            verbose = TRUE) {
+    vidalBraloCoef <- loadOmniAgeRdata(
+        "omniager_vidalbralo_coef",
+        verbose = verbose
+    )
 
-
-VidalBralo <- function(beta.m) {
-
-  # --- Step 1: Load and parse coefficients ---
-  data("VidalBraloCoef")
-  Coef_lv <- list()
-
-  # Intercept
-  Coef_lv[[1]] <- as.numeric(VidalBralo_Coef[1, 2])
-
-  # Coefficients
-  coefficients <- as.numeric(as.vector(VidalBralo_Coef[2:nrow(VidalBralo_Coef), 2]))
-  names(coefficients) <- as.vector(VidalBralo_Coef[2:nrow(VidalBralo_Coef), 1])
-  Coef_lv[[2]] <- coefficients
-
-  # --- Step 2: Calculate the linear predictor ---
-  # (Requires the 'calculateLinearPredictor' function)
-  predage.v <- calculateLinearPredictor(beta.m,
-                                        coef.lv = Coef_lv,
-                                        clock.name = "VidalBralo")
-
-  # --- Step 3: Return final age vector ---
-  # (Names are already attached by the helper function)
-  return(predage.v)
+    predAgev <- .calLinearClock(
+        betaM, vidalBraloCoef, "vidalBraloClock",
+        minCoverage, verbose
+    )
+    return(predAgev)
 }
-

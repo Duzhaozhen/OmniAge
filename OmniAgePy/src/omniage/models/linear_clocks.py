@@ -2507,6 +2507,136 @@ class WuClock(BaseLinearClock):
 
 
 
+class IntrinClock(BaseLinearClock):
+    """
+    IntrinClock Age Prediction
+    Attributes:
+        intercept (float): Model offset.
+        weights (pd.Series): Coefficients for the 380 CpGs.
+
+    References:
+        Tomusiak, A., Floro, A., Tiwari, R. et al. Development of an epigenetic clock resistant to changes in immune cell composition.
+        Commun Biol(2024) https://doi.org/10.1038/s42003-024-06609-4
+    """
+    METADATA = {
+        "year": 2024,
+        "species": "Human",
+        "tissue": "Multi-tissue",
+        "omic type": "DNAm(450K/EPIC)",
+        "prediction": "chronological age(years)",
+        "source": "https://doi.org/10.1038/s42003-024-06609-4"
+    }
+
+    def __init__(self, coef_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize the IntrinClock model.
+        
+        Args:
+            coef_df: Optional DataFrame containing model coefficients (CpG IDs and weights).
+                If None, the default 'IntrinClock.csv' will be loaded from the package data.
+        """
+        # 1. Automatic loading logic
+        if coef_df is None:
+            # Attempts to locate 'IntrinClock.csv' within the internal data directory
+            coef_df = load_clock_coefs("IntrinClock")
+            
+        # 2. Initialize the base class
+        super().__init__(coef_df, name="IntrinClock",metadata=self.METADATA)
+
+    def postprocess(self, linear_predictor):
+        """
+        Implements the inverse transformation (Anti-log).
+        """
+        adult_age = 20
+        
+        # Formula for adults (linear)
+        adult_transform = linear_predictor * (adult_age + 1) + adult_age
+        
+        # Formula for childhood (exponential)
+        child_transform = np.exp(linear_predictor + np.log(adult_age + 1)) - 1
+        
+        # Vectorized conditional logic
+        return np.where(linear_predictor > 0, adult_transform, child_transform)
+
+    
+
+
+class GaragnaniClock(BaseLinearClock):
+    """
+    The Garagnani ELOVL2-based Epigenetic Age Score
+    Attributes:
+        intercept (float): Model offset.
+        weights (pd.Series): Coefficients for the 1 CpG.
+
+    References:
+        Garagnani, P. et al. Methylation of ELOVL2 gene as a new epigenetic marker of age.
+        Aging Cell(2012) https://doi.org/10.1111/acel.12005
+    """
+    METADATA = {
+        "year": 2012,
+        "species": "Human",
+        "tissue": "Blood",
+        "omic type": "DNAm(27K)",
+        "prediction": "chronological age(years)",
+        "source": "https://doi.org/10.1111/acel.12005"
+    }
+
+    def __init__(self, coef_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize the Garagnani model.
+        
+        Args:
+            coef_df: Optional DataFrame containing model coefficients (CpG IDs and weights).
+                If None, the default 'Garagnani.csv' will be loaded from the package data.
+        """
+        # 1. Automatic loading logic
+        if coef_df is None:
+            # Attempts to locate 'Garagnani.csv' within the internal data directory
+            coef_df = load_clock_coefs("Garagnani")
+            
+        # 2. Initialize the base class
+        super().__init__(coef_df, name="Garagnani",metadata=self.METADATA)
+
+
+    
+class WeidnerClock(BaseLinearClock):
+    """
+    The WeidnerClock Epigenetic Age
+    Attributes:
+        intercept (float): Model offset.
+        weights (pd.Series): Coefficients for the 3 CpGs.
+
+    References:
+        Weidner et al. Aging of blood can be tracked by DNA methylation changes at just three CpG sites.
+        Genome Biol(2014) https://doi.org/10.1186/gb-2014-15-2-r24
+    """
+    METADATA = {
+        "year": 2014,
+        "species": "Human",
+        "tissue": "Blood",
+        "omic type": "DNAm(27K)",
+        "prediction": "chronolo aging score",
+        "source": "https://doi.org/10.1186/gb-2014-15-2-r24"
+    }
+
+    def __init__(self, coef_df: Optional[pd.DataFrame] = None):
+        """
+        Initialize the Garagnani model.
+        
+        Args:
+            coef_df: Optional DataFrame containing model coefficients (CpG IDs and weights).
+                If None, the default 'Weidner.csv' will be loaded from the package data.
+        """
+        # 1. Automatic loading logic
+        if coef_df is None:
+            # Attempts to locate 'Weidner.csv' within the internal data directory
+            coef_df = load_clock_coefs("Weidner")
+            
+        # 2. Initialize the base class
+        super().__init__(coef_df, name="Weidner",metadata=self.METADATA)
+
+        
+
 
 
 class BaseMcCartneyClock(BaseLinearClock):

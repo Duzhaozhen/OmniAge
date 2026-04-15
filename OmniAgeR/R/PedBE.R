@@ -1,70 +1,58 @@
 #' @title The PedBE (Pediatric Buccal) Clock for DNAm Age in Children
 #'
 #' @description
-#' Implements the Pediatric Buccal Epigenetic (PedBE) clock, specifically developed to estimate DNA methylation age in **pediatric (childhood) samples**, as described by McEwen et al. (2020).
+#' Implements the Pediatric Buccal Epigenetic (PedBE) clock, specifically
+#' developed to estimate DNA methylation age in
+#' **pediatric (childhood) samples**, as described by McEwen et al. (2020).
 #'
 #' @details
 #' This clock is specifically trained on and designed for pediatric buccal
 #' epithelial (cheek swab) samples. The calculation is a two-step process:
 #'
-#' 1.  A linear predictor is first calculated from the beta values using the 94-CpG elastic net coefficients . This value represents a *transformed* age.
-#' 2.  A non-linear inverse age transformation (via the internal `anti.trafo` function from Horvath, 2013) is then applied. This converts the transformed age into a final estimate of chronological age in years.
+#' 1.  A linear predictor is first calculated from the beta values using the
+#' 94-CpG elastic net coefficients . This value represents a *transformed* age.
+#' 2.  A non-linear inverse age transformation (via the transformation function
+#' from Horvath, 2013) is then applied. This converts the transformed age into
+#' a final estimate of chronological age in years.
 #'
+#' @param betaM A matrix of beta values (CpGs in rows, samples in columns).
+#' This matrix must be pre-normalized (e.g., via BMIQ) and imputed.
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.
+#' @param verbose A logical flag. If `TRUE` (default), prints status messages.
+#'
+#' @return
+#' A **numeric vector** containing the predicted DNAm age
+#' for each sample. The vector is named with the sample IDs from the `rownames`
+#' of `betaM`.
 #' @export
 #'
 #' @references
 #' McEwen LM, O'Donnell KJ, McGill MG, et al.
-#' The PedBE clock accurately estimates DNA methylation age in pediatric buccal cells.
+#' The PedBE clock accurately estimates DNA methylation age in
+#' pediatric buccal cells.
 #' \emph{Proc Natl Acad Sci U S A.} 2020
 #'
 #' @examples
-#' download_OmniAgeR_example("Hannum_example")
-#' load_OmniAgeR_example("Hannum_example")
-#' PedBE.out <- PedBE(hannum_bmiq_m)
+#' hannumBmiqM <- loadOmniAgeRdata(
+#'     "omniager_hannum_example",
+#'     verbose = FALSE
+#' )[[1]]
+#' pedBEClockOut <- pedBEClock(hannumBmiqM)
+#'
+pedBEClock <- function(betaM,
+                       minCoverage = 0,
+                       verbose = TRUE) {
+    pedBECoef <- loadOmniAgeRdata(
+        "omniager_pedbe_coef",
+        verbose = verbose
+    )
 
-
-PedBE <- function(beta.m) {
-
-  # --- Step 1: Load and parse coefficients ---
-  data("PedBECoef")
-  Coef_lv <- list()
-
-  # Intercept
-  Coef_lv[[1]] <- as.numeric(PedBECoef[1, 2])
-
-  # Coefficients
-  coefficients <- as.numeric(as.vector(PedBECoef[2:nrow(PedBECoef), 2]))
-  names(coefficients) <- as.vector(PedBECoef[2:nrow(PedBECoef), 1])
-  Coef_lv[[2]] <- coefficients
-
-
-  # --- Step 2: Define the non-linear transformation function (anti.trafo) ---
-  # (This is identical to the one in Horvath 2013)
-  anti.trafo <- function(ptage.v, adult.age = 20) {
-    y.idx <- which(ptage.v <= 0)
-    a.idx <- which(ptage.v > 0)
-    mage.v <- ptage.v
-    mage.v[a.idx] <- ptage.v[a.idx] * (adult.age + 1) + adult.age
-    mage.v[y.idx] <- exp(ptage.v[y.idx] + log(adult.age + 1)) - 1
-    return(mage.v)
-  }
-
-
-  # --- Step 3: Calculate the linear predictor ---
-  # (Requires the 'calculateLinearPredictor' function)
-  predTage.v <- calculateLinearPredictor(beta.m,
-                                         coef.lv = Coef_lv,
-                                         clock.name = "PedBE")
-
-  # --- Step 4: Apply the non-linear transformation ---
-  predMage.v <- anti.trafo(predTage.v)
-
-  # --- Step 5: Return final age vector ---
-  # (Names are already attached by the helper function)
-  return(predMage.v)
+    predAgev <- .calLinearClock(
+        betaM, pedBECoef, "pedBEClock",
+        minCoverage, verbose
+    )
+    # transformation
+    predAgev <- .antiTrafo(predAgev)
+    return(predAgev)
 }
-
-
-
-
-

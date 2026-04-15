@@ -4,34 +4,53 @@
 \alias{epiTOC3}
 \title{Estimate epiTOC3 scores}
 \usage{
-epiTOC3(data.m, ages.v = NULL)
+epiTOC3(betaM, age = NULL, minCoverage = 0, verbose = TRUE)
 }
 \arguments{
-\item{data.m}{DNAm beta value matrix with rows labeling Illumina 450k/EPIC CpGs and columns labeling samples.}
+\item{betaM}{A numeric matrix of DNAm beta values (probes as rows).}
 
-\item{ages.v}{Optional argument representing the chronological ages or surrogates thereof of the samples. Vector must be of same length as the number of samples.}
+\item{age}{Optional numeric vector representing chronological ages
+of the samples.}
+
+\item{minCoverage}{Numeric (0-1). Minimum required probe coverage.
+Default is 0.}
+
+\item{verbose}{Logical. Whether to print coverage statistics.}
 }
 \value{
 A list containing the following entries
 \itemize{
-\item tnsc: The estimated cumulative number of stem-cell divisions per stem-cell per year and per sample using the full epiTOC3 model.
-\item tnsc2: The estimated cumulative number of stem-cell divisions per stem-cell per year and per sample using an approximation of epiTOC3 which assumes all epiTOC3 CpGs have beta-values exactly 0 in the fetal stage.
-\item irS: This is returned only if the ages are provided, and gives the estimated average lifetime intrinsic rate of stem-cell division per sample, as derived from epiTOC3
+\item tnsc: The estimated cumulative number of stem-cell divisions per stem-cell
+per year and per sample using the full epiTOC3 model.
+\item tnsc2: The estimated cumulative number of stem-cell divisions per stem-cell
+per year and per sample using an approximation of epiTOC3 which assumes all
+epiTOC3 CpGs have beta-values exactly 0 in the fetal stage.
+\item irS: This is returned only if the ages are provided, and gives the
+estimated average lifetime intrinsic rate of stem-cell division per
+sample, as derived from epiTOC3
 \item irS2: As irS, but for the approximation.
-\item irT: The median estimate over all irS values, yielding a median estimate for the intrinsic rate of stem-cell division for the tissue.
+\item irT: The median estimate over all irS values, yielding a median estimate
+for the intrinsic rate of stem-cell division for the tissue.
 \item irT2: As irT, but for the approximation.
 \item avETOC3: The simple average over the 170 epiTOC3 sites.
 }
 }
 \description{
-This function takes as input an Illumina 450k/EPIC DNAm beta matrix and an age vector (optional) and will return the epiTOC3 scores.
+This function takes as input an Illumina 450k/EPIC DNAm beta matrix and
+an age vector (optional) and will return the epiTOC3 scores.
 }
 \details{
-Building upon a dynamic model of DNA methylation gain in 170 unmethylated population doubling associated CpGs, epiTOC3 can directly estimate the cumulative number of stem cell divisions in a tissue.
+Building upon a dynamic model of DNA methylation gain in 170 unmethylated
+population doubling associated CpGs, epiTOC3 can directly estimate the
+cumulative number of stem cell divisions in a tissue.
 }
 \examples{
-download_OmniAgeR_example("LungInv")
-load_OmniAgeR_example("LungInv")
-epitoc3.o<-epiTOC3(data.m = bmiq.m,ages.v = df$Age)
+lungInv <- loadOmniAgeRdata(
+    "omniager_lung_inv",
+    verbose = FALSE
+)
+lungInvM <- lungInv$bmiq_m
+phenoDf <- lungInv$PhenoTypes
+epitoc3Out <- epiTOC3(betaM = lungInvM, age = phenoDf$Age)
 
 }

@@ -22,10 +22,11 @@
 #'   \item `Body_fat_Perc` (Body Fat Percentage)
 #' }
 #'
-#' @param beta.m A numeric matrix of DNA methylation beta values.
-#'   **Rows must correspond to samples and columns to CpGs.**
-#'   `rownames` (sample IDs) and `colnames` (CpG probe IDs) are required.
-#'   The matrix should not contain `NA` values.
+#' @param betaM A numeric matrix of beta values. Rows should be CpG probes and
+#' columns should be individual samples.
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.
+#' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return
 #' A `list` containing 10 named elements, one for each trait. Each element is
@@ -52,41 +53,46 @@
 #' \emph{Genome Biol.} 2018
 #'
 #' @examples
-#' download_OmniAgeR_example("Hannum_example")
-#' load_OmniAgeR_example("Hannum_example")
-#' McCartney_Trait.out <- McCartney_Trait(hannum_bmiq_m)
+#' hannumBmiqM <- loadOmniAgeRdata(
+#'     "omniager_hannum_example",
+#'     verbose = FALSE
+#' )[[1]]
+#' mcCartneyTraitOut <- mcCartneyTrait(hannumBmiqM)
+#'
+mcCartneyTrait <- function(betaM,
+                           minCoverage = 0,
+                           verbose = TRUE) {
+    # --- Step 1: Load Coefficients ---
+    mcCartneyTraitCoef <- loadOmniAgeRdata(
+        "omniager_mccartney_trait_coef",
+        verbose = verbose
+    )
 
+    # Define the specific names
+    clockNames <- names(mcCartneyTraitCoef)
 
+    # --- Step 2: Calculate Scores for Each Clock ---
+    estLv <- list()
 
-McCartney_Trait <- function(beta.m) {
+    # Loop through the list of coefficients
+    # using seq_along instead of 1:length for safety
+    for (i in seq_along(mcCartneyTraitCoef)) {
+        tmpCoef <- mcCartneyTraitCoef[[i]]
+        colnames(tmpCoef) <- c("probe", "coef")
+        tmpCoef <- rbind(data.frame(probe = "(Intercept)", coef = 0), tmpCoef)
 
-  res_list <- list()
-  # --- Step 1: Load and parse coefficients ---
-  data("McCartneyTraitCoef")
-  for (i in seq_along(McCartneyTraitCoef)) {
-    tmp_Coef  <- McCartneyTraitCoef[[i]]
+        # Call the internal helper to handle all calculation and logging
+        estLv[[i]] <- .calLinearClock(
+            betaM = betaM,
+            coefData = tmpCoef,
+            clockLabel = clockNames[i],
+            minCoverage = minCoverage,
+            verbose = verbose
+        )
+    }
 
-    Coef_lv <- list()
+    # Assign names to the result list
+    names(estLv) <- clockNames
 
-    # Intercept
-    Coef_lv[[1]] <- 0
-
-    # Coefficients
-    coefficients <- as.numeric(as.vector(tmp_Coef[1:nrow(tmp_Coef), 2]))
-    names(coefficients) <- as.vector(tmp_Coef[1:nrow(tmp_Coef), 1])
-    Coef_lv[[2]] <- coefficients
-
-    # --- Step 2: Calculate the linear predictor ---
-    # (Requires the 'calculateLinearPredictor' function)
-    predage.v <- calculateLinearPredictor(beta.m,
-                                          coef.lv = Coef_lv,
-                                          clock.name = names(McCartneyTraitCoef)[i])
-
-    res_list[[names(McCartneyTraitCoef)[i]]] <- predage.v
-  }
-
-
-  # --- Step 3: Return final age vector ---
-  # (Names are already attached by the helper function)
-  return(res_list)
+    return(estLv)
 }

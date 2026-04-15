@@ -4,28 +4,40 @@
 \alias{stemTOCvitro}
 \title{Estimate stemTOCvitro score}
 \usage{
-stemTOCvitro(data.m)
+stemTOCvitro(betaM, minCoverage = 0, verbose = TRUE)
 }
 \arguments{
-\item{data.m}{DNAm beta value matrix with rows labeling Illumina 450k/EPIC CpGs and columns labeling samples.}
+\item{betaM}{A numeric matrix of DNAm beta values (probes as rows). Rows
+should be Illumina 450k/EPIC CpG identifiers and columns should be samples.}
+
+\item{minCoverage}{Numeric (0-1). Minimum required probe coverage.
+Default is 0.}
+
+\item{verbose}{Logical. Whether to print coverage statistics.}
 }
 \value{
 The stemTOCvitro score of each sample.
 }
 \description{
-This function takes as input an Illumina 450k/EPIC DNAm beta matrix and will return the stemTOCvitro score.
+This function takes as input an Illumina 450k/EPIC DNAm beta matrix
+and will return the stemTOCvitro score.
 }
 \details{
-The function will return the 0.95 upper quantile of the 629 stemTOCvitro CpGs.
+The function will return the 0.95 upper quantile of
+the 629 stemTOCvitro CpGs.
 }
 \examples{
-download_OmniAgeR_example("LungInv")
-load_OmniAgeR_example("LungInv")
-stemTOCvitro.v<-stemTOCvitro(data.m = bmiq.m)
+lungInv <- loadOmniAgeRdata(
+    "omniager_lung_inv",
+    verbose = FALSE
+)
+lungInvM <- lungInv$bmiq_m
+stemTOCvitroOut <- stemTOCvitro(betaM = lungInvM)
 
 }
 \references{
 Zhu, T., Tong, H., Du, Z. et al.
-An improved epigenetic counter to track mitotic age in normal and precancerous tissues.
+An improved epigenetic counter to track mitotic age in normal
+and precancerous tissues.
 \emph{Nat Commun} 2024
 }

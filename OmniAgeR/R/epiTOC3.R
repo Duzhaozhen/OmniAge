@@ -1,59 +1,117 @@
-#' @title
-#' Estimate epiTOC3 scores
-#'
-#' @aliases epiTOC3
+#' @title Estimate epiTOC3 scores
 #'
 #' @description
-#' This function takes as input an Illumina 450k/EPIC DNAm beta matrix and an age vector (optional) and will return the epiTOC3 scores.
+#' This function takes as input an Illumina 450k/EPIC DNAm beta matrix and
+#' an age vector (optional) and will return the epiTOC3 scores.
 #'
-#' @param data.m
-#' DNAm beta value matrix with rows labeling Illumina 450k/EPIC CpGs and columns labeling samples.
-#'
-#' @param ages.v
-#' Optional argument representing the chronological ages or surrogates thereof of the samples. Vector must be of same length as the number of samples.
+#' @param betaM A numeric matrix of DNAm beta values (probes as rows).
+#' @param age Optional numeric vector representing chronological ages
+#'   of the samples.
+#' @param minCoverage Numeric (0-1). Minimum required probe coverage.
+#'   Default is 0.
+#' @param verbose Logical. Whether to print coverage statistics.
 #'
 #' @details
-#' Building upon a dynamic model of DNA methylation gain in 170 unmethylated population doubling associated CpGs, epiTOC3 can directly estimate the cumulative number of stem cell divisions in a tissue.
+#' Building upon a dynamic model of DNA methylation gain in 170 unmethylated
+#' population doubling associated CpGs, epiTOC3 can directly estimate the
+#' cumulative number of stem cell divisions in a tissue.
 #'
 #' @return A list containing the following entries
 #'
-#' * tnsc: The estimated cumulative number of stem-cell divisions per stem-cell per year and per sample using the full epiTOC3 model.
-#' * tnsc2: The estimated cumulative number of stem-cell divisions per stem-cell per year and per sample using an approximation of epiTOC3 which assumes all epiTOC3 CpGs have beta-values exactly 0 in the fetal stage.
-#' * irS: This is returned only if the ages are provided, and gives the estimated average lifetime intrinsic rate of stem-cell division per sample, as derived from epiTOC3
+#' * tnsc: The estimated cumulative number of stem-cell divisions per stem-cell
+#'   per year and per sample using the full epiTOC3 model.
+#' * tnsc2: The estimated cumulative number of stem-cell divisions per stem-cell
+#'   per year and per sample using an approximation of epiTOC3 which assumes all
+#'   epiTOC3 CpGs have beta-values exactly 0 in the fetal stage.
+#' * irS: This is returned only if the ages are provided, and gives the
+#'   estimated average lifetime intrinsic rate of stem-cell division per
+#'   sample, as derived from epiTOC3
 #' * irS2: As irS, but for the approximation.
-#' * irT: The median estimate over all irS values, yielding a median estimate for the intrinsic rate of stem-cell division for the tissue.
+#' * irT: The median estimate over all irS values, yielding a median estimate
+#'   for the intrinsic rate of stem-cell division for the tissue.
 #' * irT2: As irT, but for the approximation.
 #' * avETOC3: The simple average over the 170 epiTOC3 sites.
 #'
 #'
-#'
+#' @importFrom stats median
 #'
 #' @examples
-#' download_OmniAgeR_example("LungInv")
-#' load_OmniAgeR_example("LungInv")
-#' epitoc3.o<-epiTOC3(data.m = bmiq.m,ages.v = df$Age)
+#' lungInv <- loadOmniAgeRdata(
+#'     "omniager_lung_inv",
+#'     verbose = FALSE
+#' )
+#' lungInvM <- lungInv$bmiq_m
+#' phenoDf <- lungInv$PhenoTypes
+#' epitoc3Out <- epiTOC3(betaM = lungInvM, age = phenoDf$Age)
 #'
 #' @export
 #'
 
+epiTOC3 <- function(betaM, age = NULL, minCoverage = 0, verbose = TRUE) {
+    estParams <- loadOmniAgeRdata(
+        "omniager_epitoc3_model",
+        verbose = verbose
+    )
 
-epiTOC3<-function(data.m,ages.v=NULL){
-  data('dataETOC3')
-  estETOC3.m <- dataETOC3.l[[1]];
-  map.idx <- match(rownames(estETOC3.m),rownames(data.m));
-  rep.idx <- which(is.na(map.idx)==FALSE);
-  print(paste("[epiTOC3] Number of represented epiTOC3 CpGs (max=170)=",length(rep.idx),sep=""))
-  tmp.m <- data.m[map.idx[rep.idx],];
-  avETOC3.v <- colMeans(tmp.m);
-  TNSC3.v <- 2*colMeans(diag(1/(estETOC3.m[rep.idx,1]*(1-estETOC3.m[rep.idx,2]))) %*% (tmp.m - estETOC3.m[rep.idx,2]),na.rm=TRUE);
-  TNSC32.v <- 2*colMeans(diag(1/estETOC3.m[rep.idx,1]) %*% tmp.m,na.rm=TRUE);
-  estIR3.v <- NULL; estIR32.v <- NULL;
-  estIR3 <- NULL;  estIR32 <- NULL;
-  if(!is.null(ages.v)){
-    estIR3.v <- TNSC3.v/ages.v;
-    estIR3 <- median(estIR3.v,na.rm=TRUE);
-    estIR32.v <- TNSC32.v/ages.v;
-    estIR32 <- median(estIR32.v,na.rm=TRUE);
-  }
-  return(list(tnsc=TNSC3.v,tnsc2=TNSC32.v,irS=estIR3.v,irS2=estIR32.v,irT=estIR3,irT2=estIR32,avETOC3=avETOC3.v))
+    dummyWeights <- setNames(seq_len(nrow(estParams)), rownames(estParams))
+
+    # Perform coverage check
+    coverageResult <- .checkCpGCoverage(
+        betaM = betaM,
+        allWeights = dummyWeights,
+        clockName = "epiTOC3",
+        minCoverage = minCoverage,
+        verbose = verbose
+    )
+
+    if (!coverageResult$pass) {
+        return(list(
+            tnsc = rep(NA_real_, ncol(betaM)), tnsc2 = rep(NA_real_, ncol(betaM)),
+            irS = if (!is.null(age)) rep(NA_real_, ncol(betaM)) else NULL,
+            irS2 = if (!is.null(age)) rep(NA_real_, ncol(betaM)) else NULL,
+            irT = NA_real_, irT2 = NA_real_,
+            avETOC3 = rep(NA_real_, ncol(betaM))
+        ))
+    }
+
+    # Extract the matching data and parameters
+    matchedParams <- estParams[names(coverageResult$weightsSubset), , drop = FALSE]
+    subBeta <- betaM[coverageResult$betaIdx, , drop = FALSE]
+
+    deltaV <- matchedParams[, 1]
+    beta0V <- matchedParams[, 2]
+
+    # Core algorithm implementation
+    avETOC3 <- colMeans(subBeta, na.rm = TRUE)
+
+    # Full Model: 2 * Mean( (Beta - Beta0) / (delta * (1 - Beta0)) )
+    scalingFactor <- 2 / (deltaV * (1 - beta0V))
+    tnscV <- colMeans(sweep(subBeta, 1, beta0V, "-") * scalingFactor, na.rm = TRUE)
+
+    # Approximation (beta0 = 0)
+    scalingFactor2 <- 2 / deltaV
+    tnsc2V <- colMeans(subBeta * scalingFactor2, na.rm = TRUE)
+
+    # Intrinsic Rate
+    irS <- NULL
+    irS2 <- NULL
+    irT <- NULL
+    irT2 <- NULL
+
+    if (!is.null(age)) {
+        irS <- tnscV / age
+        irS2 <- tnsc2V / age
+        irT <- median(irS, na.rm = TRUE)
+        irT2 <- median(irS2, na.rm = TRUE)
+    }
+
+    return(list(
+        tnsc = tnscV,
+        tnsc2 = tnsc2V,
+        irS = irS,
+        irS2 = irS2,
+        irT = irT,
+        irT2 = irT2,
+        avETOC3 = avETOC3
+    ))
 }

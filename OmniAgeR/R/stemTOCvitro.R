@@ -4,34 +4,71 @@
 #' @aliases stemTOCvitro
 #'
 #' @description
-#' This function takes as input an Illumina 450k/EPIC DNAm beta matrix and will return the stemTOCvitro score.
+#' This function takes as input an Illumina 450k/EPIC DNAm beta matrix
+#' and will return the stemTOCvitro score.
 #'
-#' @param data.m
-#' DNAm beta value matrix with rows labeling Illumina 450k/EPIC CpGs and columns labeling samples.
+#' @param betaM A numeric matrix of DNAm beta values (probes as rows). Rows
+#' should be Illumina 450k/EPIC CpG identifiers and columns should be samples.
+#' @param minCoverage Numeric (0-1). Minimum required probe coverage.
+#'   Default is 0.
+#' @param verbose Logical. Whether to print coverage statistics.
 #'
-#' @details
-#' The function will return the 0.95 upper quantile of the 629 stemTOCvitro CpGs.
+#' @details The function will return the 0.95 upper quantile of
+#' the 629 stemTOCvitro CpGs.
 #' @return The stemTOCvitro score of each sample.
 #'
 #' @references
 #' Zhu, T., Tong, H., Du, Z. et al.
-#' An improved epigenetic counter to track mitotic age in normal and precancerous tissues.
+#' An improved epigenetic counter to track mitotic age in normal
+#' and precancerous tissues.
 #' \emph{Nat Commun} 2024
 #'
+#' @importFrom stats quantile
 #'
 #' @examples
-#' download_OmniAgeR_example("LungInv")
-#' load_OmniAgeR_example("LungInv")
-#' stemTOCvitro.v<-stemTOCvitro(data.m = bmiq.m)
+#' lungInv <- loadOmniAgeRdata(
+#'     "omniager_lung_inv",
+#'     verbose = FALSE
+#' )
+#' lungInvM <- lungInv$bmiq_m
+#' stemTOCvitroOut <- stemTOCvitro(betaM = lungInvM)
 #'
 #' @export
 #'
 
-stemTOCvitro <- function(data.m){
-  data('cugpmitclockCpG')
-  common.v <- intersect(rownames(data.m),cugpmitclockCpG.v);
-  print(paste("[stemTOCvitro] Number of represented stemTOCvitro CpGs (max=629)=",length(common.v),sep=""))
-  stemTOCvitro.v <- apply(data.m[match(cugpmitclockCpG.v,rownames(data.m)),],2,quantile,0.95,na.rm=T)
-  return(stemTOCvitro.v);
-}
 
+stemTOCvitro <- function(betaM, minCoverage = 0, verbose = TRUE) {
+    stemTOCvitroCpG <- loadOmniAgeRdata(
+        "omniager_stemtocvitro_cpg",
+        verbose = verbose
+    )
+    # Prepare the reference probe
+    targetCpGs <- as.character(stemTOCvitroCpG)
+    clockWeights <- setNames(rep(1, length(targetCpGs)), targetCpGs)
+
+    # Perform coverage check
+    coverageResult <- .checkCpGCoverage(
+        betaM = betaM,
+        allWeights = clockWeights,
+        clockName = "stemTOCvitro",
+        minCoverage = minCoverage,
+        verbose = verbose
+    )
+
+    if (!coverageResult$pass) {
+        scores <- rep(NA_real_, ncol(betaM))
+        names(scores) <- colnames(betaM)
+        return(scores)
+    }
+
+    # 5. Calculate score
+    scores <- apply(
+        betaM[coverageResult$betaIdx, , drop = FALSE],
+        2,
+        quantile,
+        probs = 0.95,
+        na.rm = TRUE
+    )
+
+    return(scores)
+}

@@ -1,22 +1,21 @@
-
 #' @title Calculate the Retro-age Epigenetic Clock
 #'
 #' @description
 #' Calculates the "Retro-age," a retroelement-based epigenetic clock for
 #' chronological age, based on the models developed by Ndhlovu et al. (2024).
-#' The function can compute either Version 1 (V1) or Version 2 (V2) of the clock.
+#' This function computes both Version 1 (V1) and Version 2 (V2) of the clock.
 #'
-#' @param beta.m A matrix of DNA methylation beta values. **Rows must correspond
-#' to samples** and **columns to CpG probes**. Rownames (sample IDs) and
-#' colnames (CpG probe IDs) are required.
-#' @param version A character string specifying which version of the clock to
-#' use. Valid options are "V1" (EPICv1) or "V2" (EPICv1 & EPICv2 compatible,
-#' recommended). Defaults to "V2".
+#' @param betaM A numeric matrix of DNA methylation beta values.
+#'   `rownames` (CpG probe IDs) and `colnames` (Sample IDs) are required.
+#'   The matrix should not contain `NA` values.
+#'
+#' @param minCoverage A numeric value between 0 and 1 (default is 0).
+#' Specifies the minimum proportion of required CpGs that must be present
+#' in the input matrix for the clock calculation to proceed.
 #' @param verbose A logical value. If TRUE (default), the function will
 #' print messages detailing the calculation steps.
 #'
-#' @return A numeric vector of predicted ages (Retro-age). The vector is
-#' named with the sample IDs from the input matrix rownames.
+#' @return A list containing the predicted age for the "V1" and "V2" clocks.
 #'
 #' @export
 #'
@@ -26,40 +25,40 @@
 #' \emph{Aging Cell.} 2024
 #'
 #' @examples
-#' download_OmniAgeR_example("Hannum_example")
-#' load_OmniAgeR_example("Hannum_example")
-#' Retro_age.o <- Retro_age(hannum_bmiq_m)
+#' hannumBmiqM <- loadOmniAgeRdata(
+#'     "omniager_hannum_example",
+#'     verbose = FALSE
+#' )[[1]]
+#' retroAgeRes <- retroAge(hannumBmiqM)
+retroAge <- function(betaM,
+                     minCoverage = 0,
+                     verbose = TRUE) {
+    # --- Step 1: Load Coefficients ---
+    retroAgeCoef <- loadOmniAgeRdata(
+        "omniager_retroage_coef",
+        verbose = verbose
+    )
 
-Retro_age <- function(beta.m,version="V2", verbose = TRUE) {
+    # Define the specific names for the these sub-clocks
+    clockNames <- c("retroAgeV1", "retroAgeV2")
 
-  res_list <- list()
-  # --- Step 1: Load and parse coefficients ---
-  data("Retro_age_Coef")
-  temp_coef <- Retro_age_Coef[[version]]
+    # --- Step 2: Calculate Scores for Each Clock ---
+    estLv <- list()
 
-  if (verbose) {
-    print(paste("[Retro_age] Calculating Retro_age using coefficients for version:", version))
-  }
+    # Loop through the list of coefficients
+    for (i in seq_along(retroAgeCoef)) {
+        # Call the internal helper to handle all calculation and logging
+        estLv[[i]] <- .calLinearClock(
+            betaM = betaM,
+            coefData = retroAgeCoef[[i]],
+            clockLabel = clockNames[i],
+            minCoverage = minCoverage,
+            verbose = verbose
+        )
+    }
 
-  Coef_lv <- list()
+    # Assign names to the result list
+    names(estLv) <- clockNames
 
-  # Intercept
-  Coef_lv[[1]] <- as.numeric(temp_coef[1, 2])
-
-  # Coefficients
-  coefficients <- as.numeric(as.vector(temp_coef[2:nrow(temp_coef), 2]))
-  names(coefficients) <- as.vector(temp_coef[2:nrow(temp_coef), 1])
-  Coef_lv[[2]] <- coefficients
-
-  # --- Step 2: Calculate the linear predictor ---
-  # (Requires the 'calculateLinearPredictor' function)
-  predage.v <- calculateLinearPredictor(beta.m,
-                                        coef.lv = Coef_lv,
-                                        clock.name = "Retro_age",
-                                        verbose)
-
-  # --- Step 3: Return final age vector ---
-  # (Names are already attached by the helper function)
-  return(predage.v)
+    return(estLv)
 }
-

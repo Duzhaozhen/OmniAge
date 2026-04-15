@@ -14,7 +14,7 @@ AVAILABLE_CLOCK_GROUPS = {
         "Horvath2018", "Bernabeu_cAge", "CorticalClock", "PedBE",
         "CentenarianClock_40", "CentenarianClock_100", "Retro_age_V1", "Retro_age_V2",
         "ABEC","eABEC","cABEC","PipekElasticNet","PipekFilteredh","PipekRetrainedh","WuClock",
-        "PCHorvath2013","PCHorvath2018","PCHannum",
+        "IntrinClock", "GaragnaniClock", "WeidnerClock", "PCHorvath2013","PCHorvath2018","PCHannum",
     ],  
     "Biological": [
         "Zhang10", "PhenoAge", "DunedinPACE", 
@@ -28,15 +28,18 @@ AVAILABLE_CLOCK_GROUPS = {
     "Causal": ["CausalAge", "DamAge", "AdaptAge"],
     "Stochastic":["StocH", "StocZ", "StocP"],
     "CellType_Specific": ["NeuIn","NeuSin", "GliaIn","GliaSin","Hep"],
-    "Transcriptomic":["scImmuAging","BrainCTClock","PASTA_Clock"],
+    "Transcriptomic":["scImmuAging","BrainCTClock","PASTA_Clock", "ScAgePolyakClock", "BuckleyMouseSVZ"],
+    "Proteomics" : ["WyssCorayOrganAge", "GladyshevOrganAge"], 
     "CellType_Fractin" : ["DNAmCTFClock"], 
     "Trait": ["McCartneyBMI", "McCartneySmoking", "McCartneyAlcohol", "McCartneyEducation", 
                   "McCartneyTotalCholesterol", "McCartneyHDL", "McCartneyLDL", "McCartneyTotalHDLRatio", 
                   "McCartneyWHR", "McCartneyBodyFat"],
     "Gestational":["BohlinGA", "EPICGA", "KnightGA","MayneGA","LeeControl","LeeRobust","LeeRefinedRobust"],
     "Surrogate_Biomarkers":["CompCRP","CompCHIP","EpiScores","CompIL6"],
-    "Disease_Risk":["CompSmokeIndex"],
-    "Cross_Species": ["PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin","EnsembleAgeHumanMouse", "EnsembleAgeStatic", "EnsembleAgeDynamic"],
+    "Disease_Risk":["CompSmokeIndex", "HepatoXuRisk"],
+    "Cross_Species_Support": ["PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin",
+                              "EnsembleAgeHumanMouse", "EnsembleAgeStatic", "EnsembleAgeDynamic",
+                              "PetkovichMouse", "ThompsonMouse", "MeerMouse"],
 }
 
 
@@ -125,7 +128,7 @@ CLOCK_GROUPS = {
         "Horvath2018", "Bernabeu_cAge", "CorticalClock", "PedBE",
         "CentenarianClock_40", "CentenarianClock_100", "Retro_age_V1", "Retro_age_V2",
         "ABEC","eABEC","cABEC","PipekElasticNet","PipekFilteredh","PipekRetrainedh","WuClock",
-        "PCHorvath2013","PCHorvath2018","PCHannum",
+        "IntrinClock", "GaragnaniClock", "WeidnerClock", "PCHorvath2013","PCHorvath2018","PCHannum",
     ],  
     "Biological": [
         "Zhang10", "PhenoAge", "DunedinPACE", 
@@ -145,10 +148,11 @@ CLOCK_GROUPS = {
                   "McCartneyWHR", "McCartneyBodyFat"],
     "Gestational":["BohlinGA", "EPICGA", "KnightGA","MayneGA","LeeControl","LeeRobust","LeeRefinedRobust"],
     "Surrogate_Biomarkers":["CompCRP","CompCHIP","EpiScores","CompIL6"],
-    "Disease_Risk":["CompSmokeIndex"],
-    "Cross_Species": [
+    "Disease_Risk":["CompSmokeIndex", "HepatoXuRisk"],
+    "Cross_Species_Support": [
         "PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin",
-        "EnsembleAgeHumanMouse", "EnsembleAgeStatic", "EnsembleAgeDynamic"
+        "EnsembleAgeHumanMouse", "EnsembleAgeStatic", "EnsembleAgeDynamic",
+        "PetkovichMouse", "ThompsonMouse", "MeerMouse"
     ],
     "PCClocks": ["PCHorvath2013", "PCHorvath2018", "PCHannum",
                   "PCPhenoAge", "PCDNAmTL","PCGrimAge1"],
@@ -532,7 +536,7 @@ ALL_CLOCK_GROUPS = {
         "Horvath2018", "Bernabeu_cAge", "CorticalClock", "PedBE",
         "CentenarianClock_40", "CentenarianClock_100", "Retro_age_V1", "Retro_age_V2",
         "ABEC","eABEC","cABEC","PipekElasticNet","PipekFilteredh","PipekRetrainedh","WuClock",
-        "PCHorvath2013","PCHorvath2018","PCHannum",
+        "IntrinClock", "GaragnaniClock", "WeidnerClock", "PCHorvath2013","PCHorvath2018","PCHannum",
     ],  
     "Biological": [
         "Zhang10", "PhenoAge", "DunedinPACE", 
@@ -552,19 +556,21 @@ ALL_CLOCK_GROUPS = {
                   "McCartneyWHR", "McCartneyBodyFat"],
     "Gestational":["BohlinGA", "EPICGA", "KnightGA","MayneGA","LeeControl","LeeRobust","LeeRefinedRobust"],
     "Surrogate_Biomarkers":["CompCRP","CompCHIP","EpiScores","CompIL6"],
-    "Disease_Risk":["CompSmokeIndex"],
-    "Cross_Species": ["PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin","EnsembleAgeHumanMouse","EnsembleAgeStatic","EnsembleAgeDynamic"], #Future can include"
+    "Disease_Risk":["CompSmokeIndex", "HepatoXuRisk"],
+    "Cross_Species_Support": ["PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin",
+                              "EnsembleAgeHumanMouse","EnsembleAgeStatic","EnsembleAgeDynamic",
+                              "PetkovichMouse", "ThompsonMouse", "MeerMouse"], #Future can include"
     "EnsembleAge": ["EnsembleAgeHumanMouse","EnsembleAgeStatic","EnsembleAgeDynamic"],
     "PCClocks": ["PCHorvath2013", "PCHorvath2018", "PCHannum",
                   "PCPhenoAge", "PCDNAmTL","PCGrimAge1"],
-    "Transcriptomic":["scImmuAging","BrainCTClock","PASTA_Clock"]
+    "Transcriptomic":["scImmuAging","BrainCTClock","PASTA_Clock", "ScAgePolyakClock", "BuckleyMouseSVZ"],
+    "Proteomics" : ["WyssCorayOrganAge", "GladyshevOrganAge"]
 }
 
 ### cellular_aging
 ALL_CLOCK_GROUPS["Cellular_Aging"] = sorted(list(set(
     ALL_CLOCK_GROUPS["Mitotic"] + ALL_CLOCK_GROUPS["Telomere_Length"]
 )))
-
 
 def get_clock_coefs(
     clocks: Union[str, List[str]] = "all",

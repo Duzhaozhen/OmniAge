@@ -1,9 +1,13 @@
-
-#' @title The epigenetic age used for calculating the Leukocyte telomere length (2019).
+#' @title The epigenetic age used for calculating the Leukocyte telomere length.
 #'
-#' @description A function to calculate the the Leukocyte telomere length (2019) from a DNA methylation beta value matrix.
+#' @description A function to calculate the the Leukocyte telomere length (2019)
+#' from a DNA methylation beta value matrix.
 #'
-#' @param beta.m A numeric matrix of beta values. Rows should be CpG probes and columns should be individual samples.
+#' @param betaM A numeric matrix of beta values. Rows should be CpG probes and
+#' columns should be individual samples.
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.
+#' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return A named vector of predicted Leukocyte telomere length.
 #'
@@ -15,33 +19,21 @@
 #' \emph{Aging} 2019
 #'
 #' @examples
-#' download_OmniAgeR_example("Hannum_example")
-#' load_OmniAgeR_example("Hannum_example")
-#' DNAmTL.o <- DNAmTL(hannum_bmiq_m)
-
-
-
-DNAmTL <- function(beta.m) {
-
-  # --- Step 1: Load and parse coefficients ---
-  data("DNAmTLCoef") #
-
-  Coef_lv <- list()
-
-  # Intercept
-  Coef_lv[[1]] <- as.numeric(DNAmTLCoef[1, 2])
-
-  # Coefficients
-  coefficients <- as.numeric(as.vector(DNAmTLCoef[2:nrow(DNAmTLCoef), 2]))
-  names(coefficients) <- as.vector(DNAmTLCoef[2:nrow(DNAmTLCoef), 1])
-  Coef_lv[[2]] <- coefficients
-
-  # --- Step 2: Calculate the linear predictor ---
-  # (Requires the 'calculateLinearPredictor' function)
-  predage.v <- calculateLinearPredictor(beta.m,
-                                        coef.lv = Coef_lv,
-                                        clock.name = "DNAmTL")
-
-  # --- Step 5: Return final age vector ---
-  return(predage.v)
+#' hannumBmiqM <- loadOmniAgeRdata(
+#'     "omniager_hannum_example",
+#'     verbose = FALSE
+#' )[[1]]
+#' dnamTlO <- dnamTL(hannumBmiqM)
+dnamTL <- function(betaM,
+                   minCoverage = 0,
+                   verbose = TRUE) {
+    dnamTLCoef <- loadOmniAgeRdata(
+        "omniager_dnamtl_coef",
+        verbose = verbose
+    )
+    predAgev <- .calLinearClock(
+        betaM, dnamTLCoef, "dnamTL",
+        minCoverage, verbose
+    )
+    return(predAgev)
 }

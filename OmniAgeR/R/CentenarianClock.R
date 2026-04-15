@@ -1,14 +1,15 @@
 #' @title Calculate Centenarian Epigenetic Clocks (Eric Dec et al.)
 #'
-#' @description  Calculates the Centenarian epigenetic clocks (ENCen40 and ENCen100) developed by Eric Dec et al. (2023). This function serves as a wrapper that loads the internal clock coefficients and computes the linear predictors for each clock using the helper function.
-#' `calculateLinearPredictor`.
+#' @description  Calculates the Centenarian epigenetic clocks
+#' (ENCen40 and ENCen100) developed by Eric Dec et al. (2023). This function
+#' serves as a wrapper that loads the internal clock coefficients and computes
+#' the linear predictors for each clock using the helper function.
 #'
-#' @param beta.m a matrix of methylation beta values. Needs to be rows = samples and columns = CpGs, with rownames and colnames.
-#'
-#' @param verbose A boolean (default: `TRUE`). If `TRUE`, the function will
-#'   print status messages, including the number of represented CpGs
-#'   for each clock.
-#'
+#' @param betaM a matrix of methylation beta values.
+#' Needs to be rows = samples and columns = CpGs, with rownames and colnames.
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.
+#' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return A list containing the predicted scores for each Centenarian clock.
 #' \itemize{
@@ -16,58 +17,48 @@
 #'   \item `ENCen100`: Elastic net clock specifically trained on centenarians (100+).
 #' }
 #'
-#'
-#'
-#'
-#'
 #' @export
 #'
 #' @references
 #' Dec, E., Clement, J., Cheng, K. et al.
-#' Centenarian clocks: epigenetic clocks for validating claims of exceptional longevity.
-#' \emph{GeroScience} 2023
+#' Centenarian clocks: epigenetic clocks for validating claims of
+#' exceptional longevity. \emph{GeroScience} 2023
 #'
 #' @examples
-#' download_OmniAgeR_example("Hannum_example")
-#' load_OmniAgeR_example("Hannum_example")
-#' CentenarianClock.out <- CentenarianClock(hannum_bmiq_m)
+#' hannumBmiqM <- loadOmniAgeRdata(
+#'     "omniager_hannum_example",
+#'     verbose = FALSE
+#' )[[1]]
+#' centenarianClockOut <- centenarianClock(hannumBmiqM)
+#'
+centenarianClock <- function(betaM,
+                             minCoverage = 0,
+                             verbose = TRUE) {
+    # --- Step 1: Load Coefficients ---
+    CentenarianENCoef <- loadOmniAgeRdata(
+        "omniager_centenarian_coef",
+        verbose = verbose
+    )
+    # Define the specific names for the three sub-clocks
+    clockNames <- c("ENCen40", "ENCen100")
 
+    # --- Step 2: Calculate Scores for Each Clock ---
+    estLv <- list()
 
-CentenarianClock <- function(beta.m,verbose = TRUE) {
-  # --- Start message ---
-  if (verbose) {
-    print(paste0("[CentenarianClock] Starting CentenarianClock calculation..."))
-  }
+    # Loop through the list of coefficients
+    for (i in seq_along(CentenarianENCoef)) {
+        # Call the internal helper to handle all calculation and logging
+        estLv[[i]] <- .calLinearClock(
+            betaM = betaM,
+            coefData = CentenarianENCoef[[i]],
+            clockLabel = clockNames[i],
+            minCoverage = minCoverage,
+            verbose = verbose
+        )
+    }
 
-  res_list <- list()
-  # --- Step 1: Load and parse coefficients ---
-  data("CentenarianENCoef")
-  for (i in seq_along(CentenarianENCoef)) {
-    tmp_Coef  <- CentenarianENCoef[[i]]
+    # Assign names to the result list
+    names(estLv) <- clockNames
 
-    Coef_lv <- list()
-
-    # Intercept
-    Coef_lv[[1]] <- as.numeric(tmp_Coef[1, 2])
-
-    # Coefficients
-    coefficients <- as.numeric(as.vector(tmp_Coef[2:nrow(tmp_Coef), 2]))
-    names(coefficients) <- as.vector(tmp_Coef[2:nrow(tmp_Coef), 1])
-    Coef_lv[[2]] <- coefficients
-
-    # --- Step 2: Calculate the linear predictor ---
-    # (Requires the 'calculateLinearPredictor' function)
-    predage.v <- calculateLinearPredictor(beta.m,
-                                          coef.lv = Coef_lv,
-                                          clock.name = names(CentenarianENCoef)[i],
-                                          verbose)
-
-    res_list[[names(CentenarianENCoef)[i]]] <- predage.v
-  }
-
-
-  # --- Step 3: Return final age vector ---
-  # (Names are already attached by the helper function)
-  return(res_list)
+    return(estLv)
 }
-
