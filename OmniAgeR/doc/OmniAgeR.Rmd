@@ -63,11 +63,6 @@ These tools are broadly categorized into five main groups:
     specifically for non-human species(e.g.,
     UniversalPanMammalianClocks, and MeerMouse).
 
-The suite of **epigenetic aging clocks** is particularly extensive,
-organized into several functional categories, including predictors for
-chronological age, biological age, cellular division (mitotic clocks),
-and gestational age.
-
 # Epigenetic (DNAm) Aging Clocks
 
 ## Chronological Age Clocks
@@ -237,26 +232,30 @@ transcriptomic (RNA-seq) clocks:
     al. for human PBMCs.
 
 # Proteomic Clocks
-`OmniAgeR` integrates sophisticated, organ-specific aging models derived from 
-plasma proteomic profiles:
 
--   `WyssCorayOrganAge`: (Oh et al. 2023) Calculates biological organ ages using
-    pre-trained LASSO models based on SomaScan proteomic data.
-    Implemented via the `estimateProteomicOrganAges()` function, it
-    features automated data normalization, assay version scaling (v4,
+`OmniAgeR` integrates sophisticated, organ-specific aging models derived
+from plasma proteomic profiles:
+
+-   `WyssCorayOrganAge`: (Oh et al. 2023) Calculates biological organ
+    ages using pre-trained LASSO models based on SomaScan proteomic
+    data. Implemented via the `estimateProteomicOrganAges()` function,
+    it features automated data normalization, assay version scaling (v4,
     v4.1, and v5), and the dynamic calculation of biological "Age Gaps."
     It allows for the computation of Z-score standardized Age Gaps
     relative to either the original training baseline (Knight-ADRC
     cohort) or a locally fitted, cohort-specific LOESS baseline.
-    
--   `GladyshevOrganAge`: (Goeminne et al. 2024) Evaluates organ-specific aging
-trajectories and mortality risks utilizing pre-trained models on Olink proteomic 
-data. Implemented via the gladyshevOrganAge() function, it provides a unified 
-interface for both chronological (Gen1) and mortality-based (Gen2) clock 
-evaluations. The module incorporates automated UK Biobank variance rescaling 
-and dynamic Gompertz-based hazard-to-years conversions.   
 
-# Surrogate Biomarkers & Scores
+-   `GladyshevOrganAge`: (Goeminne et al. 2024) Evaluates organ-specific
+    aging trajectories and mortality risks utilizing pre-trained models
+    on Olink proteomic data. Implemented via the gladyshevOrganAge()
+    function, it provides a unified interface for both chronological
+    (Gen1) and mortality-based (Gen2) clock evaluations. The module
+    incorporates automated UK Biobank variance rescaling and dynamic
+    Gompertz-based hazard-to-years conversions.
+
+# Other DNAm Human Aging-Related Surrogate Biomarkers
+
+## Surrogate Biomarkers & Scores
 
 Besides, `OmniAgeR` includes functions to compute several other
 important surrogate markers associated with aging, lifestyle, and health
@@ -283,7 +282,7 @@ status from DNAm data.
     `Total_cholesterol`, `HDL_cholesterol`, `LDL_cholesterol`,
     `Total_HDL_ratio`, `WHR` (Waist-to-Hip Ratio), and `Body_fat_Perc`.
 
-# Disease Risk Prediction
+## Disease Risk Prediction
 
 `OmniAgeR` provides a suite of tools for disease risk assessment,
 including a DNA methylation-based smoking index derived from 1,501 CpG
@@ -297,7 +296,7 @@ exposures and clinical outcomes.
 -   `HepatoXuRisk`: (Xu et al. 2017) Calculate HepatoXu ctDNA
     Methylation Scores for Hepatocellular Carcinoma.
 
-## Cross-Species Support
+# Cross-Species Support
 
 -   `EnsembleAge`: (Haghani et al. 2025) The multi-clock framework
     implementation(DNAm clock). This includes mouse-specific estimators
@@ -333,7 +332,7 @@ algorithm, to model aging based on cell-type composition.
 ## Epigenetic (DNAm) Aging Clocks
 
 | Clock Name | Category | Calculator / Function |
-|:--------------------|:-----------------|:--------------------------------|
+|:---|:---|:---|
 | `Horvath2013` | Chronological | `epiMarker()`,`horvath2013Clock()` |
 | `Hannum` | Chronological | `epiMarker()`,`hannumClock()` |
 | `Lin` | Chronological | `epiMarker()`,`linClock()` |
@@ -394,15 +393,15 @@ algorithm, to model aging based on cell-type composition.
 
 ## Proteomic Clocks
 
-| Clock Name | Category       | Calculator / Function          |
-|:-----------|:---------------|:-------------------------------|
+| Clock Name          | Category       | Calculator / Function |
+|:--------------------|:---------------|:----------------------|
 | `WyssCorayOrganAge` | organ-specific | `wyssCorayOrganAge()` |
 | `GladyshevOrganAge` | organ-specific | `gladyshevOrganAge()` |
 
 ## Surrogate Biomarkers & Scores
 
 | Clock Name | Target | Calculator / Function |
-|:--------------------|:-----------------|:--------------------------------|
+|:---|:---|:---|
 | `CRP` | CRP/intCRP score | `epiMarker()`, `compCRP()` |
 | `CHIP` | CHIP score | `epiMarker()`, `compCHIP()` |
 | `IL6` | IL6 score | `epiMarker()`, `compIL6()` |
@@ -415,7 +414,7 @@ algorithm, to model aging based on cell-type composition.
 ## Cross-Species Support
 
 | Clock Name | Target | Calculator / Function |
-|:--------------------|:-----------------|:--------------------------------|
+|:---|:---|:---|
 | `EnsembleAge_HumanMouse` | Mouse & Human | `epiMarker()`,`ensembleAge()` |
 | `EnsembleAge_Static` | Mouse | `epiMarker()`,`ensembleAge()` |
 | `EnsembleAge_Dynamic` | Mouse | `epiMarker()`,`ensembleAge()` |
@@ -899,7 +898,8 @@ print(lapply(chipRes, head, 5))
 
 # Tutorial Example 8: Proteomic Clocks
 
-This section demonstrates how to estimate multi-organ biological ages using proteomic data from two major platforms: SomaScan and Olink.
+This section demonstrates how to estimate multi-organ biological ages
+using proteomic data from two major platforms: SomaScan and Olink.
 
 ```{r calculateProteomicOrganAges}
 library(OmniAgeR)
@@ -944,7 +944,7 @@ resultsOlink <- gladyshevOrganAge(protExp = protExpOlink,
 head(resultsOlink$Adipose)
 ```
 
-# Tutorial Example 8: Get freatures from Various Aging Biomarkers
+# Tutorial Example 9: Get freatures from Various Aging Biomarkers
 
 ```{r getMarkerWeights}
 library(OmniAgeR)
@@ -956,7 +956,7 @@ allFeatures<- getMarkerWeights(clockNames = "all")
 names(allFeatures)[1:10]
 ```
 
-# Tutorial Example 9: Celltype fraction clock based on DNAm
+# Tutorial Example 10: Celltype fraction clock based on DNAm
 
 We apply the DNAm Cell-type Fraction (CTF) Clock to 50 blood samples
 (EPIC array) from the TZH cohort to predict chronological age.
