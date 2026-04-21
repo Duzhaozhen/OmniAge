@@ -43,7 +43,7 @@ listEpiMarker <- function() {
                      "EnsembleAge_Static", 
                      "EnsembleAge_Dynamic")
     
-    crossSpeciesSupport <- c(
+    otherSpecies <- c(
         ensembleAge,
         "UniversalPanMammalianClocks",
         "PanMammalianBlood", "PanMammalianSkin",
@@ -67,7 +67,7 @@ listEpiMarker <- function() {
         surrogateBiomarkers = surrogateBiomarkers,
         traitPred = traitPred,
         diseaseRisk = diseaseRisk,
-        crossSpeciesSupport = crossSpeciesSupport
+        otherSpecies = otherSpecies
     ))
 }
 
@@ -87,7 +87,7 @@ listEpiMarker <- function() {
 #'   keywords:
 #'   - `"all"`: (Default) Calculates all available clocks:
 #'     `cellular_aging` + `chronological` + `biological` + `causal`+
-#'     `stochastic` + `ensemble` + `cross_species` + `cellTypeSpecific`.
+#'     `stochastic` + `ensemble` + `otherSpecies` + `cellTypeSpecific`.
 #'   - `"cellular_aging"`: Calculates all cellular aging clocks
 #'   (both `mitotic` and `dnamtl`).
 #'   - `"mitotic"`: Calculates only the mitotic clocks (e.g., `epiTOC1`).
@@ -113,7 +113,7 @@ listEpiMarker <- function() {
 #'   as a single bundle.
 #'   - `"diseaseRisk"`: Calculates disease risk predictions (`SmokeIndex`, etc.)
 #'    as a single bundle.
-#'   - `"crossSpeciesSupport"`: Calculates all cross species clocks
+#'   - `"otherSpecies"`: Calculates all other species clocks
 #'   (`UniversalPanMammalianClocks`, etc.) as a single bundle.
 #'
 #'   Multiple keywords and individual names can be combined (e.g.,
@@ -158,7 +158,7 @@ listEpiMarker <- function() {
 #' (e.g., `Neu-In`, `Glia-In`), gestational age clocks(e.g., `BohlinGA`,
 #' `KnightGA`), surrogate biomarkers(e.g., `CRP`, `IL6`), trait prediction
 #' (`McCartneyTrait`), disease risk prediction(e.g., `HepatoXuRisk`),
-#' and cross species clocks(e.g., `UniversalPanMammalianClocks`).
+#' and other species clocks(e.g., `UniversalPanMammalianClocks`).
 #'
 #'
 #' === Cellular Aging Clocks ===
@@ -288,7 +288,7 @@ listEpiMarker <- function() {
 #' * `HepatoXuRisk`: (Xu et al. 2017) The HepatoXu ctDNA Methylation
 #' Scores for Hepatocellular Carcinoma.
 #'
-#' === Cross Species Support===
+#' === Other Species===
 #' * `EnsembleAge`: (Haghani et al. 2025) The EnsembleAge Epigenetic Clocks.
 #' 
 #' * `UniversalPanMammalianClocks`: (Lu et al. 2023) The Universal Pan-Mammalian
@@ -831,7 +831,7 @@ epiMarker <- function(betaM,
         surrogateBiomarkers = c("CRP", "CHIP", "IL6", "EpiScores"),
         traitPred = c("McCartneyTrait"),
         diseaseRisk = c("SmokeIndex", "HepatoXuRisk"),
-        crossSpeciesSupport = c(ensembleAge, panMammalian, "PetkovichMouse", "ThompsonMouse", "MeerMouse"),
+        otherSpecies = c(ensembleAge, panMammalian, "PetkovichMouse", "ThompsonMouse", "MeerMouse"),
         pcClocks = c("PCHorvath2013", "PCHorvath2018", "PCHannum", "PCPhenoAge", "PCGrimAge1", "PCDNAmTL"),
         stochClocks = stochastic,
         panMammalian = panMammalian,

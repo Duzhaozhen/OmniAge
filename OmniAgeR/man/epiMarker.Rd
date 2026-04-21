@@ -24,7 +24,7 @@ keywords:
 \itemize{
 \item \code{"all"}: (Default) Calculates all available clocks:
 \code{cellular_aging} + \code{chronological} + \code{biological} + \code{causal}+
-\code{stochastic} + \code{ensemble} + \code{cross_species} + \code{cellTypeSpecific}.
+\code{stochastic} + \code{ensemble} + \code{otherSpecies} + \code{cellTypeSpecific}.
 \item \code{"cellular_aging"}: Calculates all cellular aging clocks
 (both \code{mitotic} and \code{dnamtl}).
 \item \code{"mitotic"}: Calculates only the mitotic clocks (e.g., \code{epiTOC1}).
@@ -48,7 +48,7 @@ as a single bundle.
 as a single bundle.
 \item \code{"diseaseRisk"}: Calculates disease risk predictions (\code{SmokeIndex}, etc.)
 as a single bundle.
-\item \code{"crossSpeciesSupport"}: Calculates all cross species clocks
+\item \code{"otherSpecies"}: Calculates all other species clocks
 (\code{UniversalPanMammalianClocks}, etc.) as a single bundle.
 }
 
@@ -180,7 +180,7 @@ stochastic clocks(\code{StocH}, \code{StocP}, \code{StocZ}), cell-type specific 
 (e.g., \code{Neu-In}, \code{Glia-In}), gestational age clocks(e.g., \code{BohlinGA},
 \code{KnightGA}), surrogate biomarkers(e.g., \code{CRP}, \code{IL6}), trait prediction
 (\code{McCartneyTrait}), disease risk prediction(e.g., \code{HepatoXuRisk}),
-and cross species clocks(e.g., \code{UniversalPanMammalianClocks}).
+and other species clocks(e.g., \code{UniversalPanMammalianClocks}).
 
 === Cellular Aging Clocks ===
 This category includes clocks measuring cell proliferation (mitotic clocks)
@@ -330,7 +330,7 @@ Complex Traits.
 Scores for Hepatocellular Carcinoma.
 }
 
-=== Cross Species Support===
+=== Other Species===
 \itemize{
 \item \code{EnsembleAge}: (Haghani et al. 2025) The EnsembleAge Epigenetic Clocks.
 \item \code{UniversalPanMammalianClocks}: (Lu et al. 2023) The Universal Pan-Mammalian

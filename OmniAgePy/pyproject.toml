@@ -1,6 +1,6 @@
 [project]
 name = "omniage"
-version = "0.99.4"
+version = "0.99.5"
 description = "The package provides a comprehensive Python framework for aging research. It offers high-level interfaces for calculating a vast suite of aging-related clocks and biomarkers."
 authors = [
     {name = "Du Zhaozhen",email = "duzhaozhen2022@sinh.ac.cn"},

@@ -271,7 +271,7 @@ class scImmuAging:
             }).rename(columns={'Prediction': 'predicted'}).reset_index()
             
             # Rounding (matching original R implementation)
-            donor_res['predicted'] = donor_res['predicted'].round()
+            #donor_res['predicted'] = donor_res['predicted'].round()
             
             # Store results
             results[ct] = {

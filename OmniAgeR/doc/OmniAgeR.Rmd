@@ -57,7 +57,7 @@ These tools are broadly categorized into five main groups:
     (CHIP), lifestyle traits, and specific disease risk indices (e.g.,
     Episcores, CRP, DNMT3A, McCartney_Trait, and SmokeIndex).
 
-5.  **Cross-Species Support**
+5.  **Other Species**
 
 -   Integrates universal cross-species clocks alongside models tailored
     specifically for non-human species(e.g.,
@@ -296,7 +296,7 @@ exposures and clinical outcomes.
 -   `HepatoXuRisk`: (Xu et al. 2017) Calculate HepatoXu ctDNA
     Methylation Scores for Hepatocellular Carcinoma.
 
-# Cross-Species Support
+# Other Species
 
 -   `EnsembleAge`: (Haghani et al. 2025) The multi-clock framework
     implementation(DNAm clock). This includes mouse-specific estimators
@@ -411,7 +411,7 @@ algorithm, to model aging based on cell-type composition.
 | `SmokeIndex` | Smoking Index | `epiMarker()`, `compSmokeIndex()` |
 | `McCartney_Trait` | Epigenetic surrogate scores for 10 different complex traits | `epiMarker()`, `mcCartneyTrait()` |
 
-## Cross-Species Support
+## Other Species
 
 | Clock Name | Target | Calculator / Function |
 |:---|:---|:---|

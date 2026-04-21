@@ -420,7 +420,7 @@ getMarkerWeights <- function(clockNames = "all", verbose = FALSE) {
     surrogateBiomarkers = c("CRP", "CHIP", "IL6", "EpiScores"),
     traitPred = c("McCartney_Trait"),
     diseaseRisk = c("SmokeIndex","HepatoXuRisk"),
-    crossSpeciesSupport =  c(ensembleAge, panMammalian, "PetkovichMouse", "ThompsonMouse", "MeerMouse","BuckleyMouseSVZ"),
+    otherSpecies =  c(ensembleAge, panMammalian, "PetkovichMouse", "ThompsonMouse", "MeerMouse","BuckleyMouseSVZ"),
     transcriptomics = transcriptomics,
     proteomics= c("WyssCorayOrganAge","GladyshevOrganAge"),
     

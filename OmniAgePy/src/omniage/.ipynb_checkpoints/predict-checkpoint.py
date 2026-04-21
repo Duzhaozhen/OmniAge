@@ -37,7 +37,7 @@ AVAILABLE_CLOCK_GROUPS = {
     "Gestational":["BohlinGA", "EPICGA", "KnightGA","MayneGA","LeeControl","LeeRobust","LeeRefinedRobust"],
     "Surrogate_Biomarkers":["CompCRP","CompCHIP","EpiScores","CompIL6"],
     "Disease_Risk":["CompSmokeIndex", "HepatoXuRisk"],
-    "Cross_Species_Support": ["PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin",
+    "Other_Species": ["PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin",
                               "EnsembleAgeHumanMouse", "EnsembleAgeStatic", "EnsembleAgeDynamic",
                               "PetkovichMouse", "ThompsonMouse", "MeerMouse"],
 }
@@ -149,7 +149,7 @@ CLOCK_GROUPS = {
     "Gestational":["BohlinGA", "EPICGA", "KnightGA","MayneGA","LeeControl","LeeRobust","LeeRefinedRobust"],
     "Surrogate_Biomarkers":["CompCRP","CompCHIP","EpiScores","CompIL6"],
     "Disease_Risk":["CompSmokeIndex", "HepatoXuRisk"],
-    "Cross_Species_Support": [
+    "Other_Species": [
         "PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin",
         "EnsembleAgeHumanMouse", "EnsembleAgeStatic", "EnsembleAgeDynamic",
         "PetkovichMouse", "ThompsonMouse", "MeerMouse"
@@ -557,7 +557,7 @@ ALL_CLOCK_GROUPS = {
     "Gestational":["BohlinGA", "EPICGA", "KnightGA","MayneGA","LeeControl","LeeRobust","LeeRefinedRobust"],
     "Surrogate_Biomarkers":["CompCRP","CompCHIP","EpiScores","CompIL6"],
     "Disease_Risk":["CompSmokeIndex", "HepatoXuRisk"],
-    "Cross_Species_Support": ["PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin",
+    "Other_Species": ["PanMammalianUniversal", "PanMammalianBlood", "PanMammalianSkin",
                               "EnsembleAgeHumanMouse","EnsembleAgeStatic","EnsembleAgeDynamic",
                               "PetkovichMouse", "ThompsonMouse", "MeerMouse"], #Future can include"
     "EnsembleAge": ["EnsembleAgeHumanMouse","EnsembleAgeStatic","EnsembleAgeDynamic"],
