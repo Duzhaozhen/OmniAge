@@ -1,3 +1,12 @@
+## ----setup, include=FALSE-----------------------------------------------------
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  tidy = TRUE,
+  tidy.opts = list(width.cutoff = 65)
+)
+
 ## ----mototic-clock-example----------------------------------------------------
 library(OmniAgeR)
 library(ggplot2)
