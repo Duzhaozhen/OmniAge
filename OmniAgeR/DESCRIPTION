@@ -21,7 +21,6 @@ BugReports: https://github.com/Duzhaozhen/OmniAgeR/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Depends: R (>= 4.5.0)
 Suggests: BiocStyle, ggplot2, ggpubr, knitr, patchwork, rmarkdown,
         testthat (>= 3.0.0), formatR
@@ -51,3 +50,4 @@ biocViews: Software,
     Regression,
     MethylationArray,
     Transcriptomics
+Config/roxygen2/version: 8.0.0

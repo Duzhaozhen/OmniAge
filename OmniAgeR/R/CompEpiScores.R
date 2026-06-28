@@ -119,6 +119,29 @@ compEpiScores <- function(betaM, minCoverage = 0, verbose = TRUE) {
             currentBeta <- betaM[coverage$betaIdx, , drop = FALSE]
             finalWeights <- coverage$weightsSubset
         }
+        
+        if (length(missingCpGs) > 0) {
+          trainMeans <- tmpCoef[
+            tmpCoef$CpG_Site %in% missingCpGs,
+            c("CpG_Site", "Mean_Beta_Value")
+          ]
+        
+          imputeMat <- matrix(rep(trainMeans$Mean_Beta_Value, ncol(betaM)),
+                              ncol = ncol(betaM), byrow = FALSE
+          )
+          rownames(imputeMat) <- trainMeans$CpG_Site
+          colnames(imputeMat) <- colnames(betaM)
+          
+          currentBeta <- rbind(betaM[coverage$betaIdx, , drop = FALSE], imputeMat)
+          
+          finalWeights <- c(
+            coverage$weightsSubset,
+            currentWeights[missingCpGs]
+          )
+        } else {
+          currentBeta <- betaM[coverage$betaIdx, , drop = FALSE]
+          finalWeights <- coverage$weightsSubset
+        }
 
         # 4. Invoke the computing engine (minCoverage=0)
         resList[[protein]] <- .calculateLinearPredictor(
