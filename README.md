@@ -1,10 +1,3 @@
----
-
-editor_options: 
-  markdown: 
-    wrap: 72
----
-
 <p align="center">
 
 <img src="assets/OmniAge_logo.png" alt="OmniAge Graphical Abstract" width="700"/>
