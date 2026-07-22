@@ -4,18 +4,26 @@
 \alias{causalClock}
 \title{Calculate Causal, Damage, and Adaptation Epigenetic Clocks}
 \usage{
-causalClock(betaM, minCoverage = 0, verbose = TRUE)
+causalClock(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{DNAm beta value matrix with rows labeling Illumina 450k/EPIC
-CpGs and columns labeling samples.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional. The matched CpG values used for
+calculation must not contain missing values.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
 \value{
+A numeric vector containing one predicted age per
+sample, in the same order as the columns of \code{betaM}. If
+\code{betaM} has column names, these are retained as the names of the
+returned vector; otherwise, an unnamed numeric vector is returned.
+
 A list containing the predicted scores for the "Causal", "Damage",
 and "Adaptation" clocks.
 }

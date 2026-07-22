@@ -4,14 +4,17 @@
 \alias{LeeGa}
 \title{Calculate the Lee gestational age}
 \usage{
-LeeGa(betaM, minCoverage = 0, verbose = TRUE)
+LeeGa(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{DNAm beta value matrix with rows labeling Illumina 450k/EPIC
-CpGs and columns labeling samples.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional. The matched CpG values used for
+calculation must not contain missing values.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
@@ -27,7 +30,6 @@ from the Robust model.
 \item \strong{\code{LeeRefinedRobust}}: Numeric vector of predicted GAs
 from the Refined Robust model.
 }
-Each vector is named with the sample IDs from the \code{rownames} of \code{beta.m}.
 }
 \description{
 Implements the placental epigenetic clocks for estimating gestational

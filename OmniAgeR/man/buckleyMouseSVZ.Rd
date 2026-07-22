@@ -8,7 +8,7 @@ buckleyMouseSVZ(
   seuratObj,
   cellTypes,
   clockType = "chronological",
-  minCoverage = 0,
+  minCoverage = 0.5,
   verbose = TRUE
 )
 }
@@ -22,7 +22,7 @@ c("aNSC_NPC", "Astrocyte_qNSC", "Endothelial", "Microglia", "Neuroblast", "Oligo
 
 \item{clockType}{Character. "chronological" or "biological".}
 
-\item{minCoverage}{A numeric value (0-1). Minimum proportion of required genes.}
+\item{minCoverage}{A numeric value (0-1). Minimum proportion of required genes. Default is 0.5.}
 
 \item{verbose}{Logical flag for printing status messages.}
 }

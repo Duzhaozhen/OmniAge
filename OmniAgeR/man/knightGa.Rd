@@ -4,19 +4,22 @@
 \alias{knightGa}
 \title{Calculate the Knight gestational age}
 \usage{
-knightGa(betaM, minCoverage = 0, verbose = TRUE)
+knightGa(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A matrix of beta values (CpGs in rows, samples in columns).
-This matrix must be pre-normalized (e.g., via BMIQ) and imputed.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional. The matched CpG values used for
+calculation must not contain missing values.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
 \value{
-A named vector of predicted Gestational Ages (in weeks).
+A vector of predicted Gestational Ages (in weeks).
 }
 \description{
 A function to calculate the Knight gestational age

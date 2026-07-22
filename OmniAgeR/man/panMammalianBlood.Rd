@@ -8,7 +8,7 @@ panMammalianBlood(
   betaM,
   speciesName,
   anageData = NULL,
-  minCoverage = 0,
+  minCoverage = 0.5,
   verbose = TRUE
 )
 }
@@ -23,7 +23,7 @@ Must include 'SpeciesLatinName', 'GestationTimeInYears',
 'averagedMaturity.yrs', and 'maxAge'.}
 
 \item{minCoverage}{Numeric (0-1). Minimum required proportion of CpGs present.
-Default is 0.}
+Default is 0.5.}
 
 \item{verbose}{Logical. Whether to print status messages.}
 }
@@ -53,7 +53,7 @@ anageData <- loadOmniAgeRdata(
 
 # Run the calculation with progress messages
 clockResults <- panMammalianBlood(
-    betaM = tursiopsExample$beta_m,
+    betaM = tursiopsExample$beta_m, # 
     speciesName = tursiopsExample$PhenoTypes$SpeciesLatinName,
     anageData = anageData
 )

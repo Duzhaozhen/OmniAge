@@ -4,16 +4,19 @@
 \alias{stemTOCvitro}
 \title{Estimate stemTOCvitro score}
 \usage{
-stemTOCvitro(betaM, minCoverage = 0, verbose = TRUE)
+stemTOCvitro(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix of DNAm beta values (probes as rows). Rows
-should be Illumina 450k/EPIC CpG identifiers and columns should be samples.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional. The matched CpG values used for
+calculation must not contain missing values.}
 
-\item{minCoverage}{Numeric (0-1). Minimum required probe coverage.
-Default is 0.}
+\item{minCoverage}{A numeric value (0-1). The minimum proportion of
+required CpGs that must be present. Default is 0.5.}
 
-\item{verbose}{Logical. Whether to print coverage statistics.}
+\item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
 \value{
 The stemTOCvitro score of each sample.

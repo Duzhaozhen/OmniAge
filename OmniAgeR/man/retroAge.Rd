@@ -4,19 +4,19 @@
 \alias{retroAge}
 \title{Calculate the Retro-age Epigenetic Clock}
 \usage{
-retroAge(betaM, minCoverage = 0, verbose = TRUE)
+retroAge(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix of DNA methylation beta values.
-\code{rownames} (CpG probe IDs) and \code{colnames} (Sample IDs) are required.
-The matrix should not contain \code{NA} values.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional. The matched CpG values used for
+calculation must not contain missing values.}
 
-\item{minCoverage}{A numeric value between 0 and 1 (default is 0).
-Specifies the minimum proportion of required CpGs that must be present
-in the input matrix for the clock calculation to proceed.}
+\item{minCoverage}{A numeric value (0-1). The minimum proportion of
+required CpGs that must be present. Default is 0.5.}
 
-\item{verbose}{A logical value. If TRUE (default), the function will
-print messages detailing the calculation steps.}
+\item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
 \value{
 A list containing the predicted age for the "V1" and "V2" clocks.

@@ -59,9 +59,14 @@
 #' hannumBmiqM <- hannumExample[[1]]
 #' systemsAgeOut <- systemsAge(hannumBmiqM, systemsAgeData)
 #'}
-systemsAge <- function(betaM, clockData, minCoverage = 0, verbose = TRUE) {
+systemsAge <- function(betaM, clockData, minCoverage = 0.5, verbose = TRUE) {
     if (verbose) message("[SystemsAge] Initializing multi-system aging analysis...")
-
+  
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = TRUE
+    )
+  
     # --- 1. Validation & SE Support ---
     # Data Integrity Check
     if (rlang::hash(clockData) != "d984914ff6aa17d8a6047fed5f9f6e4d") {
@@ -69,7 +74,7 @@ systemsAge <- function(betaM, clockData, minCoverage = 0, verbose = TRUE) {
     }
 
     sampleIds <- colnames(betaM)
-    n_samples <- length(sampleIds)
+    nSamples <- ncol(betaM)
     # --- 2. Preprocessing & Coverage Check ---
     # Transpose: Samples as rows for PCA projection
     betaTrans <- t(betaM)
@@ -83,9 +88,38 @@ systemsAge <- function(betaM, clockData, minCoverage = 0, verbose = TRUE) {
     )
 
     if (is.null(betaProcessed)) {
-        res <- data.frame(SampleID = sampleIds)
-        res[seq_len(n_samples), 2:14] <- NA_real_
-        return(res)
+      return(data.frame(
+        SampleID = sampleIds,
+        Blood = rep(NA_real_, nSamples),
+        Brain = rep(NA_real_, nSamples),
+        Inflammation = rep(NA_real_, nSamples),
+        Heart = rep(NA_real_, nSamples),
+        Hormone = rep(NA_real_, nSamples),
+        Immune = rep(NA_real_, nSamples),
+        Kidney = rep(NA_real_, nSamples),
+        Liver = rep(NA_real_, nSamples),
+        Metabolic = rep(NA_real_, nSamples),
+        Lung = rep(NA_real_, nSamples),
+        MusculoSkeletal = rep(NA_real_, nSamples),
+        Age_prediction = rep(NA_real_, nSamples),
+        SystemsAge = rep(NA_real_, nSamples),
+        stringsAsFactors = FALSE
+      ))
+    }
+    
+    if (nrow(betaProcessed) != nSamples) {
+      stop(
+        "[SystemsAge] The number of samples changed during preprocessing.",
+        call. = FALSE
+      )
+    }
+    
+    if (!is.null(rownames(betaProcessed)) &&
+        !identical(rownames(betaProcessed), sampleIds)) {
+      stop(
+        "[SystemsAge] Sample order changed during methylation preprocessing.",
+        call. = FALSE
+      )
     }
 
     # --- 3. DNAm PCA Projection ---
@@ -111,21 +145,33 @@ systemsAge <- function(betaM, clockData, minCoverage = 0, verbose = TRUE) {
     for (i in seq_along(groups)) {
         group <- groups[i]
         tf <- grepl(group, colnames(dnamSystemPCs))
-        subPCs <- dnamSystemPCs[, tf]
+        subPCs <- dnamSystemPCs[, tf,drop = FALSE]
         coeffs <- clockData$system_scores_coefficients_scale[tf]
-
-        # Matrix multiplication or simple scaling for single-PC systems
-        if (length(coeffs) == 1) {
-            systemScores[, i] <- subPCs * -1
+        if (!any(tf)) {
+          stop(
+            sprintf(
+              "[SystemsAge] No system-specific components were found for %s.",
+              group),
+            call. = FALSE
+          )
+        }
+        
+        if (length(coeffs) == 1L) {
+          systemScores[, i] <- -as.numeric(subPCs[, 1])
         } else {
-            systemScores[, i] <- subPCs %*% coeffs
+          systemScores[, i] <- as.numeric(subPCs %*% coeffs)
         }
     }
 
     # --- 5. Age Prediction & Systems Age Index ---
     # 5a. Predicted Chronological Age
-    agePredRaw <- (as.matrix(dnamPCs) %*% as.matrix(clockData$Predicted_age_coefficients[2:4019])) +
+    agePredRaw <- as.numeric(
+      as.matrix(dnamPCs) %*%
+        as.numeric(
+          clockData$Predicted_age_coefficients[2:4019]
+        ) +
         clockData$Predicted_age_coefficients[1]
+    )
 
     # Polynomial transformation
     agePred <- (agePredRaw * clockData$Age_prediction_model[2]) +
@@ -150,13 +196,20 @@ systemsAge <- function(betaM, clockData, minCoverage = 0, verbose = TRUE) {
 
     # --- 6. Final Scaling (Unit: Years) ---
     # Apply study-specific transformation to normalize system ages
-    for (j in seq_len(13)) {
+    for (j in seq_len(ncol(finalScores))) {
         y <- finalScores[, j]
         finalScores[, j] <- (((y - clockData$transformation_coefs[j, 1]) / clockData$transformation_coefs[j, 2]) * clockData$transformation_coefs[j, 4]) + clockData$transformation_coefs[j, 3]
         finalScores[, j] <- finalScores[, j] / 12 # Final year conversion
     }
+    
+    if (nrow(finalScores) != nSamples) {
+      stop(
+        "[SystemsAge] Internal sample alignment failed.",
+        call. = FALSE
+      )
+    }
 
     # Combine with Sample IDs
-    results <- data.frame(SampleID = sampleIds, finalScores, stringsAsFactors = FALSE)
+    results <- data.frame(SampleID = sampleIds, finalScores, stringsAsFactors = FALSE,check.names = FALSE)
     return(results)
 }

@@ -7,21 +7,27 @@
 ensembleAge(
   betaM,
   clockVersion = c("HumanMouse", "Static", "Dynamic"),
-  minCoverage = 0,
+  minCoverage = 0.5,
   verbose = TRUE
 )
 }
 \arguments{
-\item{betaM}{A numeric matrix (Rows: CpGs, Cols: Samples) or \code{SummarizedExperiment}.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. Sample identifiers in
+\code{colnames(betaM)} are recommended but not required. If column names
+are absent, temporary internal sample identifiers are generated during
+calculation.}
 
 \item{clockVersion}{Character. One of \code{"Dynamic"}, \code{"Static"}, or \code{"HumanMouse"}.}
 
-\item{minCoverage}{Numeric (0-1). Minimum required proportion of CpGs present. Default is 0.}
+\item{minCoverage}{Numeric (0-1). Minimum required probe coverage for
+imputation and calculation. Default is 0.5.}
 
-\item{verbose}{Logical. Whether to print status messages.}
+\item{verbose}{Logical. Whether to print progress messages.
+Default is \code{TRUE}.}
 }
 \value{
-A \code{list} where each element is a named numeric vector of predicted values.
+A \code{list} where each element is a numeric vector of predicted values.
 The names of the list elements correspond to the specific sub-clocks
 calculated (e.g., \code{HumanMouse_HumanMouse}, \code{Static_Static}, etc.).
 }

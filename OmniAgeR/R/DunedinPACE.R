@@ -13,14 +13,20 @@
 #' * **Quantile Normalization**: Standardizes the data against a gold-standard reference to reduce batch effects and ensure comparability.
 #' * **Score Calculation**: Computes the final DunedinPACE score using the pre-trained model weights.
 #'
-#' @param betaM A numeric matrix (Rows: CpGs, Cols: Samples)
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. Sample identifiers in
+#'   \code{colnames(betaM)} are recommended but not required. If column names
+#'   are absent, temporary internal sample identifiers are generated during
+#'   calculation.
 #' @param minCoverage Numeric (0-1). Minimum required probe coverage for
-#'   imputation and calculation. Default is 0.
+#'   imputation and calculation. Default is 0.5.
 #' @param verbose Logical. Whether to print progress messages.
 #'   Default is \code{TRUE}.
 #'
-#' @return  A named numeric vector containing the calculated DunedinPACE
-#' for each sample.
+#' @return A numeric vector containing the calculated DunedinPACE score for
+#'   each sample in the original column order. When \code{betaM} has column
+#'   names, these are retained as the names of the returned vector; otherwise,
+#'   an unnamed numeric vector is returned.
 #'
 #' @references
 #' Belsky DW, Caspi A, Corcoran DL, et al.
@@ -36,7 +42,20 @@
 #'     verbose = FALSE
 #' )[[1]]
 #' dunedinPACEOut <- dunedinPACE(hannumBmiqM)
-dunedinPACE <- function(betaM, minCoverage = 0, verbose = TRUE) {
+dunedinPACE <- function(betaM, minCoverage = 0.5, verbose = TRUE) {
+  
+    # Record whether sample names were supplied by the user.
+    inputHadColnames <- !is.null(colnames(betaM))
+    
+    # Temporary sample identifiers are required internally for
+    # sample filtering and result realignment.
+    if (!inputHadColnames) {
+      colnames(betaM) <- paste0(
+        ".OmniAgeR_sample_",
+        seq_len(ncol(betaM))
+      )
+    }
+  
     # Load model data
     modelName <- "DunedinPACE"
     modelSpecs <- loadOmniAgeRdata(
@@ -68,9 +87,21 @@ dunedinPACE <- function(betaM, minCoverage = 0, verbose = TRUE) {
         verbose = verbose # This will print the Background CpG stats
     )
 
+    
     if (is.null(processedMat)) {
-        if (verbose) warning("[DunedinPACE] Prediction aborted: Insufficient probe coverage.")
-        return(setNames(rep(NA_real_, ncol(betaM)), colnames(betaM)))
+      if (verbose) {
+        warning(
+          "[DunedinPACE] Prediction aborted: Insufficient probe coverage."
+        )
+      }
+      
+      result <- setNames(rep(NA_real_, ncol(betaM)), colnames(betaM))
+      
+      if (!inputHadColnames) {
+        result <- unname(result)
+      }
+      
+      return(result)
     }
 
     # --- 4. Quantile Normalization to Gold Standard ---
@@ -102,6 +133,10 @@ dunedinPACE <- function(betaM, minCoverage = 0, verbose = TRUE) {
     # --- 6. Re-align with original samples ---
     fullResults <- setNames(rep(NA_real_, ncol(betaM)), colnames(betaM))
     fullResults[names(finalScores)] <- finalScores
-
+    # Return an unnamed vector when the original input had no column names.
+    if (!inputHadColnames) {
+      fullResults <- unname(fullResults)
+    }
+    
     return(fullResults)
 }

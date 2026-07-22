@@ -112,8 +112,12 @@ ctsClocks <- function(betaM,
                       dataType = c("bulk", "sorted"),
                       ctfM = NULL,
                       tissue = c("brain", "otherTissue"),
-                      minCoverage = 0,
+                      minCoverage = 0.5,
                       verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     dataType <- match.arg(dataType)
     tissue <- match.arg(tissue)
 
@@ -192,7 +196,7 @@ ctsClocks <- function(betaM,
                 betaM = targetMat,
                 coefLv = list(intercept, weights),
                 clockName = clockLabel,
-                minCoverage = 0,
+                minCoverage = minCoverage,
                 verbose = FALSE
             )
         } else {

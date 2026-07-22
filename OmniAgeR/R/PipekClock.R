@@ -20,15 +20,19 @@
 #'
 #' Internally applies Horvath's (2013) log-linear age transformation.
 #'
-#' @param betaM A numeric matrix of DNA methylation beta values.
-#'   `rownames` (CpG probe IDs) and `colnames` (Sample IDs) are required.
-#'   The matrix should not contain `NA` values.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
-#' @return A numeric vector of predicted biological ages. The vector is
-#' named using the sample IDs from the \code{rownames} of \code{betaM}.
+#' @return A numeric vector containing one predicted age per
+#'   sample, in the same order as the columns of \code{betaM}. If
+#'   \code{betaM} has column names, these are retained as the names of the
+#'   returned vector; otherwise, an unnamed numeric vector is returned.
 #'
 #' @export
 #'
@@ -45,8 +49,12 @@
 #' pipekElasticNetOut <- pipekElasticNet(hannumBmiqM)
 #'
 pipekElasticNet <- function(betaM,
-                            minCoverage = 0,
+                            minCoverage = 0.5,
                             verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     pipekElasticNetCoef <- loadOmniAgeRdata(
         "omniager_pipek_elasticnet_coef",
         verbose = verbose
@@ -92,15 +100,19 @@ pipekElasticNet <- function(betaM,
 #'
 #' Internally applies Horvath's (2013) log-linear age transformation.
 #'
-#' @param betaM A numeric matrix of DNA methylation beta values.
-#'   `rownames` (CpG probe IDs) and `colnames` (Sample IDs) are required.
-#'   The matrix should not contain `NA` values.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
-#' @return A numeric vector of predicted biological ages. The vector is
-#' named using the sample IDs from the \code{rownames} of \code{betaM}.
+#' @return A numeric vector containing one predicted age per
+#'   sample, in the same order as the columns of \code{betaM}. If
+#'   \code{betaM} has column names, these are retained as the names of the
+#'   returned vector; otherwise, an unnamed numeric vector is returned.
 #'
 #' @export
 #'
@@ -117,8 +129,12 @@ pipekElasticNet <- function(betaM,
 #' pipekFilteredhOut <- pipekFilteredh(hannumBmiqM)
 #'
 pipekFilteredh <- function(betaM,
-                           minCoverage = 0,
+                           minCoverage = 0.5,
                            verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     pipekFilteredhCoef <- loadOmniAgeRdata(
         "omniager_pipek_filteredh_coef",
         verbose = verbose
@@ -161,15 +177,19 @@ pipekFilteredh <- function(betaM,
 #'
 #' Internally applies Horvath's (2013) log-linear age transformation.
 #'
-#' @param betaM A numeric matrix of DNA methylation beta values.
-#'   `rownames` (CpG probe IDs) and `colnames` (Sample IDs) are required.
-#'   The matrix should not contain `NA` values.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
-#' @return A numeric vector of predicted biological ages. The vector is
-#' named using the sample IDs from the \code{rownames} of \code{betaM}.
+#' @return A numeric vector containing one predicted age per
+#'   sample, in the same order as the columns of \code{betaM}. If
+#'   \code{betaM} has column names, these are retained as the names of the
+#'   returned vector; otherwise, an unnamed numeric vector is returned.
 #'
 #' @export
 #'
@@ -186,8 +206,13 @@ pipekFilteredh <- function(betaM,
 #' pipekRetrainedhOut <- pipekRetrainedh(hannumBmiqM)
 #'
 pipekRetrainedh <- function(betaM,
-                            minCoverage = 0,
+                            minCoverage = 0.5,
                             verbose = TRUE) {
+  
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     pipekRetrainedhCoef <- loadOmniAgeRdata(
         "omniager_pipek_retrainedh_coef",
         verbose = verbose

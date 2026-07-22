@@ -56,7 +56,7 @@
 #'
 #' scImmuAgingOut <- scImmuAging(seuratObj, c("CD4T", "CD8T"))
 #' }
-scImmuAging <- function(seuratObj, cellTypes, minCoverage = 0, verbose = TRUE) {
+scImmuAging <- function(seuratObj, cellTypes, minCoverage = 0.5, verbose = TRUE) {
     # 1. loading model
 
     scimmuagingModel <- loadOmniAgeRdata(

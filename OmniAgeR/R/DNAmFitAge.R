@@ -1,31 +1,56 @@
-#' @title Calculate DNAmFitAge and related fitness biomarkers
+#' @title Calculate DNAmFitAge and DNAm fitness biomarkers
 #'
 #' @description
-#' Calculates all 6 DNAm fitness biomarkers, DNAmFitAge, and FitAgeAcceleration
-#' from a DNA methylation matrix and phenotype data.
-#
+#' Calculates six DNA methylation-based fitness biomarkers and DNAmFitAge
+#' from a DNA methylation beta-value matrix, chronological age, sex and
+#' pre-calculated DNAmGrimAge values.
 #'
-#' @param betaM A numeric matrix. **Rows must be CpGs, Columns must be Samples.**
-#'   The `colnames` must be the sample IDs.
-#' @param age A numeric vector of chronological age for each sample.
-#'   The order **must match the column order** of `betaM`.
-#' @param sex A character or factor vector of sex for each sample
-#'   (e.g., "Male" or "Female"). The order **must match the column order**
-#'   of `beta_matrix`.
-#' @param grimageVector A numeric vector of pre-calculated DNAmGrimAge values.
-#'   The order **must match the column order** of `betaM`.
-#' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
-#' @param verbose A logical flag. If `TRUE` (default), prints status messages
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and sample identifiers as column names.
+#'   \code{colnames(betaM)} must be provided and must be identical to
+#'   \code{names(age)}, \code{names(sex)} and
+#'   \code{names(grimageVector)}.
 #'
-#' @return
-#' A `data.frame` with 12 columns:
+#' @param age A numeric vector containing chronological age for each sample.
+#'   A named vector is recommended. If names are supplied, they must be
+#'   identical to \code{colnames(betaM)}, including sample order. An unnamed
+#'   vector is accepted when its length equals \code{ncol(betaM)}; in this
+#'   case, values are matched to samples according to the column order of
+#'   \code{betaM}, and a warning is issued.
+#'
+#' @param sex A character or factor vector containing sex for each sample.
+#'   Values must be either \code{"Male"} or \code{"Female"}. A named vector
+#'   is recommended. If names are supplied, they must be identical to
+#'   \code{colnames(betaM)}, including sample order. An unnamed vector is
+#'   accepted when its length equals \code{ncol(betaM)}; in this case, values
+#'   are matched to samples according to the column order of \code{betaM},
+#'   and a warning is issued.
+#'
+#' @param grimageVector A numeric vector containing pre-calculated
+#'   DNAmGrimAge values for each sample. A named vector is recommended.
+#'   If names are supplied, they must be identical to
+#'   \code{colnames(betaM)}, including sample order. An unnamed vector is
+#'   accepted when its length equals \code{ncol(betaM)}; in this case, values
+#'   are matched to samples according to the column order of \code{betaM},
+#'   and a warning is issued.
+#'
+#' @param minCoverage A numeric value between 0 and 1 specifying the minimum
+#'   proportion of required CpGs that must be present. Default is 0.5.
+#'
+#' @param verbose Logical. Whether to print progress messages.
+#'   Default is \code{TRUE}.
+#'   
+#' @return A data frame with one row per sample and the following columns:
 #' \itemize{
-#'   \item `SampleID`: The sample identifiers.
-#'   \item `DNAmGait_noAge`, `DNAmGrip_noAge`, `DNAmVO2max`: Fitness biomarkers.
-#'   \item `DNAmGait_wAge`, `DNAmGrip_wAge`, `DNAmFEV1_wAge`: Age-adjusted fitness biomarkers.
-#'   \item `DNAmGrimAge`: The input DNAmGrimAge.
-#'   \item `DNAmFitAge`: The calculated biological fitness age.
+#'   \item \code{SampleID}: Sample identifier.
+#'   \item \code{DNAmVO2max}: DNAm-predicted VO2max.
+#'   \item \code{DNAmGait_noAge}: Gait-speed biomarker without age.
+#'   \item \code{DNAmGrip_noAge}: Grip-strength biomarker without age.
+#'   \item \code{DNAmGait_wAge}: Gait-speed biomarker including age.
+#'   \item \code{DNAmGrip_wAge}: Grip-strength biomarker including age.
+#'   \item \code{DNAmFEV1_wAge}: FEV1 biomarker including age.
+#'   \item \code{DNAmGrimAge}: The supplied DNAmGrimAge value.
+#'   \item \code{DNAmFitAge}: The calculated DNAmFitAge value.
 #' }
 #'
 #' @export
@@ -40,52 +65,176 @@
 #'     "omniager_hannum_example",
 #'     verbose = FALSE
 #' )
+#'
 #' hannumBmiqM <- hannumExample[[1]]
 #' phenoTypesHannum <- hannumExample[[2]]
-#' age <- phenoTypesHannum$Age
-#' sex <- ifelse(phenoTypesHannum$Sex == "F", "Female", "Male")
-#' GrimAge1O <- grimAge1(hannumBmiqM, age, sex)
-#' dnamFitAgeOut <- dnamFitAge(hannumBmiqM, age, sex, GrimAge1O$DNAmGrimAge1)
-dnamFitAge <- function(betaM, age, sex, grimageVector, minCoverage = 0,
-                       verbose = TRUE) {
-    # --- 1. Object conversion and validation ---
-    DNAmFitnessModels <- loadOmniAgeRdata(
-        "omniager_dnamfitage_coef",
-        verbose = verbose
+#' sampleIds <- colnames(hannumBmiqM)
+#'
+#' age <- setNames(
+#'     phenoTypesHannum$Age,
+#'     sampleIds
+#' )
+#'
+#' sex <- setNames(
+#'     ifelse(
+#'         phenoTypesHannum$Sex == "F",
+#'         "Female",
+#'         "Male"
+#'     ),
+#'     sampleIds
+#' )
+#'
+#' grimAge1Out <- grimAge1(
+#'     betaM = hannumBmiqM,
+#'     age = age,
+#'     sex = sex
+#' )
+#'
+#' grimageVector <- setNames(
+#'     grimAge1Out$DNAmGrimAge1,
+#'     grimAge1Out$SampleID
+#' )
+#'
+#' dnamFitAgeOut <- dnamFitAge(
+#'     betaM = hannumBmiqM,
+#'     age = age,
+#'     sex = sex,
+#'     grimageVector = grimageVector
+#' )
+#' 
+
+dnamFitAge <- function(
+    betaM,
+    age,
+    sex,
+    grimageVector,
+    minCoverage = 0.5,
+    verbose = TRUE
+) {
+  # --- 1. Validate and align input objects ---
+  betaM <- .validateBetaMatrix(
+    betaM,
+    requireColnames = TRUE
+  )
+  
+  sampleIds <- colnames(betaM)
+  
+  age <- .validateAge(
+    age = age,
+    sampleNames = sampleIds,
+    reorder = FALSE
+  )
+  
+  sex <- .validateSex(
+    sex = sex,
+    sampleNames = sampleIds,
+    allowedValues = c("Male", "Female"),
+    reorder = FALSE
+  )
+  
+  grimageVector <- .validateGrimAgeVector(
+    grimageVector = grimageVector,
+    sampleNames = sampleIds,
+    reorder = FALSE
+  )
+  
+  if (!is.numeric(minCoverage) ||
+      length(minCoverage) != 1L ||
+      is.na(minCoverage) ||
+      minCoverage < 0 ||
+      minCoverage > 1) {
+    stop(
+      "`minCoverage` must be a single numeric value between 0 and 1.",
+      call. = FALSE
     )
-
-    n_samples <- ncol(betaM)
-    sampleIds <- colnames(betaM)
-    femaleNumeric <- ifelse(sex == "Female", 1, 0)
-
-    # --- 2. Data Preparation with Coverage Check ---
-    # Transpose for sample-wise operations
-    betaTrans <- t(betaM)
-
-    # Pass minCoverage to the internal prep function
-    dataPrep <- .prepareFitAgeData(
-        betaM = betaTrans,
-        sampleIds = sampleIds,
-        femaleVec = femaleNumeric,
-        ageVec = age,
-        modelData = DNAmFitnessModels,
-        minCoverage = minCoverage,
-        verbose = verbose
+  }
+  
+  if (!is.logical(verbose) ||
+      length(verbose) != 1L ||
+      is.na(verbose)) {
+    stop(
+      "`verbose` must be either TRUE or FALSE.",
+      call. = FALSE
     )
-
-
-    if (is.null(dataPrep)) {
-        res <- data.frame(SampleID = sampleIds)
-        res[, c("DNAmFitAge")] <- NA_real_
-        return(res)
-    }
-
-    fitnessEst <- .estimateFitnessMarkers(dataPrep, DNAmFitnessModels)
-    fitnessEst$DNAmGrimAge <- grimageVector
-    finalResults <- .calculateFinalFitAge(fitnessEst)
-
-    return(finalResults[match(sampleIds, finalResults$SampleID), ])
+  }
+  
+  # --- 2. Load model data ---
+  DNAmFitnessModels <- loadOmniAgeRdata(
+    "omniager_dnamfitage_coef",
+    verbose = verbose
+  )
+  
+  femaleNumeric <- ifelse(
+    sex == "Female",
+    1,
+    0
+  )
+  
+  # --- 3. Prepare input data ---
+  betaTrans <- t(betaM)
+  
+  dataPrep <- .prepareFitAgeData(
+    betaM = betaTrans,
+    sampleIds = sampleIds,
+    femaleVec = unname(femaleNumeric),
+    ageVec = unname(age),
+    modelData = DNAmFitnessModels,
+    minCoverage = minCoverage,
+    verbose = verbose
+  )
+  
+  # Return a consistently structured result when coverage is insufficient.
+  if (is.null(dataPrep)) {
+    return(data.frame(
+      SampleID = sampleIds,
+      DNAmVO2max = NA_real_,
+      DNAmGait_noAge = NA_real_,
+      DNAmGrip_noAge = NA_real_,
+      DNAmGait_wAge = NA_real_,
+      DNAmGrip_wAge = NA_real_,
+      DNAmFEV1_wAge = NA_real_,
+      DNAmGrimAge = unname(grimageVector),
+      DNAmFitAge = NA_real_,
+      stringsAsFactors = FALSE
+    ))
+  }
+  
+  # --- 4. Estimate fitness biomarkers ---
+  fitnessEst <- .estimateFitnessMarkers(
+    dataPrep,
+    DNAmFitnessModels
+  )
+  
+  fitnessEst$DNAmGrimAge <- unname(grimageVector)
+  
+  # --- 5. Calculate DNAmFitAge ---
+  finalResults <- .calculateFinalFitAge(
+    fitnessEst
+  )
+  
+  resultOrder <- match(
+    sampleIds,
+    finalResults$SampleID
+  )
+  
+  if (anyNA(resultOrder)) {
+    stop(
+      "Internal sample realignment failed during DNAmFitAge calculation.",
+      call. = FALSE
+    )
+  }
+  
+  finalResults[
+    resultOrder,
+    ,
+    drop = FALSE
+  ]
 }
+
+
+
+
+
 
 
 #' Prepare and Impute Data for FitAge Calculation
@@ -237,7 +386,9 @@ dnamFitAge <- function(betaM, age, sex, grimageVector, minCoverage = 0,
 #'
 #' @param data Data.frame containing all component fitness biomarkers.
 #'
-#' @return Data.frame including DNAmFitAge and FitAgeAccel.
+#' @return A data frame containing the component fitness biomarkers,
+#'   supplied DNAmGrimAge values and calculated DNAmFitAge values.
+#'   
 #' @keywords internal
 #' @noRd
 .calculateFinalFitAge <- function(data) {
@@ -274,4 +425,58 @@ dnamFitAge <- function(betaM, age, sex, grimageVector, minCoverage = 0,
     cols_to_remove <- c("Age", "Female")
     data <- data[, !(names(data) %in% cols_to_remove)]
     return(data)
+}
+
+#' Validate a pre-calculated DNAmGrimAge vector
+#'
+#' @param grimageVector A numeric vector containing pre-calculated
+#'   DNAmGrimAge values.
+#' @param sampleNames Expected sample identifiers.
+#' @param reorder Logical. Whether to reorder the vector when the identifiers
+#'   match but occur in a different order.
+#' @param allowUnnamed Logical. Whether an unnamed vector is accepted and
+#'   matched to samples by position. Default is \code{TRUE}.
+#'
+#' @return A validated numeric vector.
+#'
+#' @keywords internal
+#' @noRd
+.validateGrimAgeVector <- function(
+    grimageVector,
+    sampleNames,
+    reorder = FALSE,
+    allowUnnamed = TRUE
+) {
+  if (!is.numeric(grimageVector)) {
+    stop(
+      "`grimageVector` must be a numeric vector.",
+      call. = FALSE
+    )
+  }
+  
+  if (length(grimageVector) != length(sampleNames)) {
+    stop(
+      "`grimageVector` must contain exactly one value for each ",
+      "sample in betaM.",
+      call. = FALSE
+    )
+  }
+  
+  if (anyNA(grimageVector) ||
+      any(!is.finite(grimageVector))) {
+    stop(
+      "`grimageVector` must not contain missing or non-finite values.",
+      call. = FALSE
+    )
+  }
+  
+  grimageVector <- .validateSampleNames(
+    x = grimageVector,
+    sampleNames = sampleNames,
+    argumentName = "grimageVector",
+    reorder = reorder,
+    allowUnnamed = allowUnnamed
+  )
+  
+  grimageVector
 }

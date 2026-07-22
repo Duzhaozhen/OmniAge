@@ -4,21 +4,25 @@
 \alias{bohlinGa}
 \title{Calculate the Bohlin Gestational Age (Cord Blood)}
 \usage{
-bohlinGa(betaM, minCoverage = 0, verbose = TRUE)
+bohlinGa(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{a matrix of methylation beta values.
-Needs to be rows = samples and columns = CpGs, with rownames and colnames.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional. The matched CpG values used for
+calculation must not contain missing values.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
 \value{
-#' A \strong{numeric vector} containing the predicted gestational
-age (in weeks) for each sample. The vector is named with the sample IDs
-from the \code{rownames} of \code{betaM}.
+A numeric vector containing one predicted gestational age per
+sample, in the same order as the columns of \code{betaM}. If
+\code{betaM} has column names, these are retained as the names of the
+returned vector; otherwise, an unnamed numeric vector is returned.
 }
 \description{
 Implements the epigenetic clock for predicting gestational age (GA) using

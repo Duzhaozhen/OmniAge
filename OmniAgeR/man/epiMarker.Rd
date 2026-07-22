@@ -9,14 +9,17 @@ epiMarker(
   clockNames = "all",
   chronAge = NULL,
   sexVec = NULL,
-  minCoverage = 0,
+  minCoverage = 0.5,
   verbose = TRUE,
   ...
 )
 }
 \arguments{
-\item{betaM}{DNAm beta value matrix with rows labeling Illumina 450k/EPIC
-CpGs and columns labeling samples.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns.
+\code{rownames(betaM)} are required. Sample column names are strongly
+recommended and are required when chronological age, sex or clocks that
+return sample identifiers are used.}
 
 \item{clockNames}{A character vector specifying which clocks to calculate.
 This can include individual clock names (e.g., "Horvath2013") or special
@@ -56,14 +59,24 @@ Multiple keywords and individual names can be combined (e.g.,
 \code{c("Horvath2013", "GrimAge2")}).
 Use \code{listEpiMarker()} to see a categorized list of all available clocks.}
 
-\item{chronAge}{Optional numeric vector of chronological ages.
-\bold{Note:} This is mandatory for \code{GrimAge}, \code{DNAmFitAge}, and \code{epiTOC} versions 2 & 3.}
+\item{chronAge}{An optional numeric vector containing chronological age
+for each sample. A named vector is recommended. If names are supplied,
+they must be identical to \code{colnames(betaM)}, including sample order.
+An unnamed vector is accepted when its length equals
+\code{ncol(betaM)}; values are then matched by column position and a
+warning is issued. Chronological age is required for GrimAge,
+DNAmFitAge, epiTOC2, epiTOC3 and PC clocks.}
 
-\item{sexVec}{Optional character vector ('Male', 'Female').
-\bold{Note:} Required for \code{GrimAge} and \code{DNAmFitAge}.}
+\item{sexVec}{An optional character or factor vector containing
+\code{"Male"} or \code{"Female"} for each sample. A named vector is
+recommended. If names are supplied, they must be identical to
+\code{colnames(betaM)}, including sample order. An unnamed vector is
+accepted when its length equals \code{ncol(betaM)}; values are then
+matched by column position and a warning is issued. Sex is required for
+GrimAge, DNAmFitAge and PC clocks.}
 
 \item{minCoverage}{Numeric (0-1). Minimum proportion of required CpGs
-present. Default 0.}
+present. Default 0.5.}
 
 \item{verbose}{Logical. Whether to print progress messages.}
 
@@ -356,10 +369,14 @@ lungInv <- loadOmniAgeRdata(
 )
 lungInvM <- lungInv$bmiq_m
 phenoDf <- lungInv$PhenoTypes
+age <- setNames(
+    phenoDf$Age,
+    colnames(lungInvM)
+) 
 epiMarkerOut <- epiMarker(
     betaM = lungInvM,
     clockNames = "mitotic",
-    chronAge = phenoDf$Age,
+    chronAge = age,
     minCoverage = 0
 )
 ## Downloading "PCClocks_data" and "SystemsAge_data" will take a very long time.
@@ -370,8 +387,21 @@ hannumExample <- loadOmniAgeRdata(
 )
 hannumBmiqM <- hannumExample[[1]]
 phenoTypesHannum <- hannumExample[[2]]
-age <- phenoTypesHannum$Age
-sex <- ifelse(phenoTypesHannum$Sex == "F", "Female", "Male")
+sampleIds <- colnames(hannumBmiqM)
+
+age <- setNames(
+    phenoTypesHannum$Age,
+    sampleIds
+)
+
+sex <- setNames(
+    ifelse(
+        phenoTypesHannum$Sex == "F",
+        "Female",
+        "Male"
+    ),
+    sampleIds
+)
 
 pcClockData <- loadOmniAgeRdata(
     "PCClocks_data",

@@ -80,8 +80,11 @@ listEpiMarker <- function() {
 #' such as "Horvath2013" or "PhenoAge", either individually or as predefined
 #' groups (e.g., "cellular_aging").
 #'
-#' @param betaM DNAm beta value matrix with rows labeling Illumina 450k/EPIC
-#' CpGs and columns labeling samples.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns.
+#'   \code{rownames(betaM)} are required. Sample column names are strongly
+#'   recommended and are required when chronological age, sex or clocks that
+#'   return sample identifiers are used.
 #' @param clockNames A character vector specifying which clocks to calculate.
 #'   This can include individual clock names (e.g., "Horvath2013") or special
 #'   keywords:
@@ -120,13 +123,24 @@ listEpiMarker <- function() {
 #'   `c("Horvath2013", "GrimAge2")`).
 #'   Use `listEpiMarker()` to see a categorized list of all available clocks.
 #'
-#' @param chronAge Optional numeric vector of chronological ages.
-#'   \bold{Note:} This is mandatory for \code{GrimAge}, \code{DNAmFitAge}, and \code{epiTOC} versions 2 & 3.
-#' @param sexVec Optional character vector ('Male', 'Female').
-#'   \bold{Note:} Required for \code{GrimAge} and \code{DNAmFitAge}.
+#' @param chronAge An optional numeric vector containing chronological age
+#'   for each sample. A named vector is recommended. If names are supplied,
+#'   they must be identical to \code{colnames(betaM)}, including sample order.
+#'   An unnamed vector is accepted when its length equals
+#'   \code{ncol(betaM)}; values are then matched by column position and a
+#'   warning is issued. Chronological age is required for GrimAge,
+#'   DNAmFitAge, epiTOC2, epiTOC3 and PC clocks.
+#'   
+#' @param sexVec An optional character or factor vector containing
+#'   \code{"Male"} or \code{"Female"} for each sample. A named vector is
+#'   recommended. If names are supplied, they must be identical to
+#'   \code{colnames(betaM)}, including sample order. An unnamed vector is
+#'   accepted when its length equals \code{ncol(betaM)}; values are then
+#'   matched by column position and a warning is issued. Sex is required for
+#'   GrimAge, DNAmFitAge and PC clocks.
 #' 
 #' @param minCoverage Numeric (0-1). Minimum proportion of required CpGs
-#' present. Default 0.
+#' present. Default 0.5.
 #' @param verbose Logical. Whether to print progress messages.
 #' @param ... Additional context-specific arguments:
 #'   \describe{
@@ -599,10 +613,14 @@ listEpiMarker <- function() {
 #' )
 #' lungInvM <- lungInv$bmiq_m
 #' phenoDf <- lungInv$PhenoTypes
+#' age <- setNames(
+#'     phenoDf$Age,
+#'     colnames(lungInvM)
+#' ) 
 #' epiMarkerOut <- epiMarker(
 #'     betaM = lungInvM,
 #'     clockNames = "mitotic",
-#'     chronAge = phenoDf$Age,
+#'     chronAge = age,
 #'     minCoverage = 0
 #' )
 #' ## Downloading "PCClocks_data" and "SystemsAge_data" will take a very long time.
@@ -613,8 +631,21 @@ listEpiMarker <- function() {
 #' )
 #' hannumBmiqM <- hannumExample[[1]]
 #' phenoTypesHannum <- hannumExample[[2]]
-#' age <- phenoTypesHannum$Age
-#' sex <- ifelse(phenoTypesHannum$Sex == "F", "Female", "Male")
+#' sampleIds <- colnames(hannumBmiqM)
+#'
+#' age <- setNames(
+#'     phenoTypesHannum$Age,
+#'     sampleIds
+#' )
+#'
+#' sex <- setNames(
+#'     ifelse(
+#'         phenoTypesHannum$Sex == "F",
+#'         "Female",
+#'         "Male"
+#'     ),
+#'     sampleIds
+#' )
 #'
 #' pcClockData <- loadOmniAgeRdata(
 #'     "PCClocks_data",
@@ -648,7 +679,7 @@ epiMarker <- function(betaM,
                       clockNames = "all",
                       chronAge = NULL,
                       sexVec = NULL,
-                      minCoverage = 0,
+                      minCoverage = 0.5,
                       verbose = TRUE,
                       ...) {
     # --- 1. Obtain the classification mapping and expand the clock list ---
@@ -662,10 +693,40 @@ epiMarker <- function(betaM,
     if (length(clocksToRun) == 0) {
         stop("[EpiMarker] No valid clocks selected or missing required Age/Sex metadata.")
     }
+    requireColnames <- (
+      !is.null(chronAge) ||
+        !is.null(sexVec) ||
+        "SystemsAge" %in% clocksToRun
+    )
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = requireColnames
+    )
+    
+    sampleIds <- colnames(betaM)
+    
+    if (!is.null(chronAge)) {
+      chronAge <- .validateAge(
+        age = chronAge,
+        sampleNames = sampleIds,
+        reorder = FALSE
+      )
+    }
+    
+    if (!is.null(sexVec)) {
+      sexVec <- .validateSex(
+        sex = sexVec,
+        sampleNames = sampleIds,
+        allowedValues = c("Male", "Female"),
+        reorder = FALSE
+      )
+    }
+    
 
     # --- 3. Prepare the list for storing the results ---
     resultsList <- list()
     extraArgs <- list(...)
+    
     # --- 4. Perform prediction ---
     # 1. EpiCMIT
     epicmitRequested <- intersect(clocksToRun, clockMap$epicmitGroup)
@@ -683,22 +744,59 @@ epiMarker <- function(betaM,
     }
     # 3. PC Clocks
     pcGroup <- intersect(clocksToRun, clockMap$pcClocks)
-    if (length(pcGroup) > 0 && !is.null(extraArgs$pcClockData)) {
-        if (verbose) message("[EpiMarker] Calculating PCClocks bundle...")
+    if (length(pcGroup) > 0L) {
+      if (is.null(extraArgs$pcClockData)) {
+        warning(
+          "[EpiMarker] PC clocks were skipped because `pcClockData` ",
+          "was not supplied. Load it using ",
+          "loadOmniAgeRdata(\"PCClocks_data\").",
+          call. = FALSE
+        )
+      } else {
+        if (verbose) {
+          message(
+            "[EpiMarker] Calculating PCClocks bundle..."
+          )
+        }
+        
         resultsList$PCClocks <- pcClocks(
-            betaM, chronAge, sexVec,
-            extraArgs$pcClockData,
-            minCoverage, verbose
+          betaM = betaM,
+          age = chronAge,
+          sex = sexVec,
+          clockData = extraArgs$pcClockData,
+          minCoverage = minCoverage,
+          verbose = verbose
         )
-        clocksToRun <- setdiff(clocksToRun, clockMap$pcClocks)
+      }
+      
+      clocksToRun <- setdiff(
+        clocksToRun,
+        clockMap$pcClocks
+      )
     }
+    
     # 4. SystemsAge
-    if ("SystemsAge" %in% clocksToRun && !is.null(extraArgs$systemsAgeData)) {
-        resultsList$SystemsAge <- systemsAge(
-            betaM, extraArgs$systemsAgeData,
-            minCoverage, verbose
+    if ("SystemsAge" %in% clocksToRun) {
+      if (is.null(extraArgs$systemsAgeData)) {
+        warning(
+          "[EpiMarker] SystemsAge was skipped because `systemsAgeData` ",
+          "was not supplied. Load it using ",
+          "loadOmniAgeRdata(\"SystemsAge_data\").",
+          call. = FALSE
         )
-        clocksToRun <- setdiff(clocksToRun, "SystemsAge")
+      } else {
+        resultsList$SystemsAge <- systemsAge(
+          betaM = betaM,
+          clockData = extraArgs$systemsAgeData,
+          minCoverage = minCoverage,
+          verbose = verbose
+        )
+      }
+      
+      clocksToRun <- setdiff(
+        clocksToRun,
+        "SystemsAge"
+      )
     }
     # 5. Stochastic Clocks
     stochRequested <- intersect(clocksToRun, clockMap$stochClocks)
@@ -762,23 +860,63 @@ epiMarker <- function(betaM,
     }
     # 10. DNAmFitAge
     if ("DNAmFitAge" %in% clocksToRun) {
-        grimObj <- resultsList$GrimAge1
-
-        if (!is.null(grimObj) && "DNAmGrimAge1" %in% colnames(grimObj)) {
-            if (verbose) message("[EpiMarker] Calculating DNAmFitAge using calculated DNAmGrimAge1...")
-
-            resultsList$DNAmFitAge <- dnamFitAge(
-                betaM = betaM,
-                age = chronAge,
-                sex = sexVec,
-                grimageVector = grimObj$DNAmGrimAge1,
-                minCoverage = minCoverage,
-                verbose = verbose
-            )
-        } else {
-            warning("[EpiMarker] DNAmFitAge skipped: GrimAge1 result not found. DNAmFitAge requires GrimAge1.")
+      grimObj <- resultsList$GrimAge1
+      
+      validGrimResult <- (
+        !is.null(grimObj) &&
+          is.data.frame(grimObj) &&
+          all(
+            c("SampleID", "DNAmGrimAge1") %in%
+              colnames(grimObj)
+          )
+      )
+      
+      if (validGrimResult) {
+        if (!setequal(
+          grimObj$SampleID,
+          colnames(betaM)
+        )) {
+          stop(
+            "[EpiMarker] GrimAge1 sample identifiers do not match ",
+            "colnames(betaM).",
+            call. = FALSE
+          )
         }
+        
+        grimageVector <- setNames(
+          grimObj$DNAmGrimAge1,
+          grimObj$SampleID
+        )
+        
+        grimageVector <- grimageVector[
+          colnames(betaM)
+        ]
+        
+        if (verbose) {
+          message(
+            "[EpiMarker] Calculating DNAmFitAge using calculated ",
+            "DNAmGrimAge1..."
+          )
+        }
+        
+        resultsList$DNAmFitAge <- dnamFitAge(
+          betaM = betaM,
+          age = chronAge,
+          sex = sexVec,
+          grimageVector = grimageVector,
+          minCoverage = minCoverage,
+          verbose = verbose
+        )
+      } else {
+        warning(
+          "[EpiMarker] DNAmFitAge was skipped because a valid GrimAge1 ",
+          "result was not found.",
+          call. = FALSE
+        )
+      }
     }
+    
+   
 
     if (verbose) message("[EpiMarker] All requested calculations successfully completed.")
     return(resultsList)

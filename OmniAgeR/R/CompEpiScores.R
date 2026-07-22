@@ -25,16 +25,20 @@
 #' subsetting the appropriate coefficients, and computes a linear predictor
 #' using the `calculateLinearPredictor` helper function.
 #'
-#' @param betaM A numeric matrix of beta values. Rows should be CpG probes and
-#' columns should be individual samples.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
-#' @return A list of length 109. Each element of the list corresponds to one
-#' calculated EpiScore (one for each protein). The name of each list element is
-#' the name of the EpiScore. Each element contains a named numeric vector of
-#' the calculated scores for all samples.
+#' @return A list of length 109, with one element for each EpiScore.
+#'   Each element is a numeric vector containing one score per sample in the
+#'   original column order of \code{betaM}. If \code{betaM} has column names,
+#'   these are retained as the names of each score vector; otherwise, unnamed
+#'   numeric vectors are returned.
 #'
 #' @references
 #' Gadd DA, Hillary RF, McCartney DL, et al.
@@ -52,7 +56,12 @@
 #'     verbose = FALSE
 #' )[[1]]
 #' allEpiscoresOut <- compEpiScores(hannumBmiqM)
-compEpiScores <- function(betaM, minCoverage = 0, verbose = TRUE) {
+compEpiScores <- function(betaM, minCoverage = 0.5, verbose = TRUE) {
+  
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     EpiScoresCoef <- loadOmniAgeRdata(
         "omniager_episcores_coef",
         verbose = verbose
@@ -86,45 +95,34 @@ compEpiScores <- function(betaM, minCoverage = 0, verbose = TRUE) {
         )
 
         if (!coverage$pass) {
-            resList[[protein]] <- rep(NA_real_, ncol(betaM))
-            next
+          resList[[protein]] <- setNames(
+            rep(NA_real_, ncol(betaM)),
+            colnames(betaM)
+          )
+          next
         }
 
         # 3. Carry out the second stage interpolation
         requiredCpGs <- names(currentWeights)
         presentCpGs <- names(coverage$weightsSubset)
         missingCpGs <- setdiff(requiredCpGs, presentCpGs)
-
-        if (length(missingCpGs) > 0) {
-            trainMeans <- tmpCoef[
-                tmpCoef$CpG_Site %in% missingCpGs,
-                c("CpG_Site", "Mean_Beta_Value")
-            ]
-
-            # Construct the imputation matrix
-            imputeMat <- matrix(rep(trainMeans$Mean_Beta_Value, ncol(betaM)),
-                ncol = ncol(betaM), byrow = FALSE
-            )
-            rownames(imputeMat) <- trainMeans$CpG_Site
-            colnames(imputeMat) <- colnames(betaM)
-
-
-            currentBeta <- rbind(betaM[coverage$betaIdx, , drop = FALSE], imputeMat)
-
-            finalWeights <- c(
-                coverage$weightsSubset,
-                setNames(trainMeans$Mean_Beta_Value, trainMeans$CpG_Site)
-            )
-        } else {
-            currentBeta <- betaM[coverage$betaIdx, , drop = FALSE]
-            finalWeights <- coverage$weightsSubset
-        }
         
         if (length(missingCpGs) > 0) {
           trainMeans <- tmpCoef[
-            tmpCoef$CpG_Site %in% missingCpGs,
-            c("CpG_Site", "Mean_Beta_Value")
+            match(missingCpGs, tmpCoef$CpG_Site),
+            c("CpG_Site", "Mean_Beta_Value"),
+            drop = FALSE
           ]
+          if (anyNA(trainMeans$Mean_Beta_Value)) {
+            stop(
+              sprintf(
+                "[%s] Training-cohort mean beta values are unavailable ",
+                protein
+              ),
+              "for one or more required CpGs.",
+              call. = FALSE
+            )
+          }
         
           imputeMat <- matrix(rep(trainMeans$Mean_Beta_Value, ncol(betaM)),
                               ncol = ncol(betaM), byrow = FALSE
@@ -143,12 +141,12 @@ compEpiScores <- function(betaM, minCoverage = 0, verbose = TRUE) {
           finalWeights <- coverage$weightsSubset
         }
 
-        # 4. Invoke the computing engine (minCoverage=0)
+        # 4. Invoke the computing engine (minCoverage=minCoverage)
         resList[[protein]] <- .calculateLinearPredictor(
             betaM = currentBeta,
             coefLv = list(0, finalWeights),
             clockName = protein,
-            minCoverage = 0,
+            minCoverage = minCoverage,
             verbose = FALSE
         )
     }

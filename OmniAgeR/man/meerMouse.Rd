@@ -4,7 +4,7 @@
 \alias{meerMouse}
 \title{Meer Whole Lifespan Multi-Tissue Mouse DNA Methylation Age Predictor}
 \usage{
-meerMouse(betaM, minCoverage = 0, verbose = TRUE)
+meerMouse(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
 \item{betaM}{A numeric matrix of beta values (ranging from 0 to 1). Rows must
@@ -13,7 +13,7 @@ based on the mm10/GRCm38 assembly) corresponding to the clock's CpG sites.
 Columns represent individual samples.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
@@ -35,7 +35,7 @@ exampleMat <- loadOmniAgeRdata(
     "omniager_mouse_rrbs_example",
     verbose = FALSE
 )
-predRes <- meerMouse(exampleMat)
+predRes <- meerMouse(exampleMat,minCoverage = 0)
 
 }
 \references{

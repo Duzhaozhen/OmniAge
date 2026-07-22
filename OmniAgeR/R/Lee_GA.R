@@ -18,10 +18,14 @@
 #' CpGs (e.g., 546 for `LeeControl`) with the columns in the input matrix,
 #' and calculates a linear prediction of GA.
 #'
-#' @param betaM DNAm beta value matrix with rows labeling Illumina 450k/EPIC
-#' CpGs and columns labeling samples.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
+#'   
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return
@@ -36,7 +40,6 @@
 #'   \item \strong{`LeeRefinedRobust`}: Numeric vector of predicted GAs
 #'   from the Refined Robust model.
 #' }
-#' Each vector is named with the sample IDs from the `rownames` of `beta.m`.
 #'
 #' @export
 #'
@@ -62,8 +65,12 @@
 #' }
 #'
 LeeGa <- function(betaM,
-                  minCoverage = 0,
+                  minCoverage = 0.5,
                   verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     # --- Step 1: Load Coefficients ---
     leeGACoef <- loadOmniAgeRdata(
         "omniager_lee_ga_coef",

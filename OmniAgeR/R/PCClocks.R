@@ -7,17 +7,31 @@
 #' This function computes PC-based versions of Horvath2013, Horvath2018, Hannum,
 #' PhenoAge, and GrimAge1, along with their principal components.
 #'
-#' @param betaM A numeric matrix of DNA methylation (beta) values.
-#'   **Samples must be in columns** and CpG probes in rows.
-#' @param age A numeric vector of chronological ages for each sample,
-#'   in the same order as the columns of `DNAm`.
-#' @param sex A character vector of biological sex for each sample, in the
-#'   same order as the columns of `DNAm`. Values of "Female" are
-#'   encoded as 1; all other values are encoded as 0.
-#' @param clockData The pre-loaded data object from
-#'  \code{loadOmniAgeRData("PCClocks_data")}.
-#' @param minCoverage Numeric (0-1). Minimum required probe coverage.
-#'  Default is 0.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and sample identifiers as column names.
+#'   \code{colnames(betaM)} must be provided and must be identical to
+#'   \code{names(age)} and \code{names(sex)}.
+#'
+#' @param age A numeric vector containing chronological age for each sample.
+#'   A named vector is recommended. If names are supplied, they must be
+#'   identical to \code{colnames(betaM)}, including sample order. An unnamed
+#'   vector is accepted when its length equals \code{ncol(betaM)}; in this
+#'   case, values are matched to samples according to the column order of
+#'   \code{betaM}, and a warning is issued.
+#'
+#' @param sex A character or factor vector containing sex for each sample.
+#'   Values must be either \code{"Male"} or \code{"Female"}. A named vector
+#'   is recommended. If names are supplied, they must be identical to
+#'   \code{colnames(betaM)}, including sample order. An unnamed vector is
+#'   accepted when its length equals \code{ncol(betaM)}; in this case, values
+#'   are matched to samples according to the column order of \code{betaM},
+#'   and a warning is issued.
+#'
+#' @param clockData The PC clock model object returned by
+#'   \code{loadOmniAgeRdata("PCClocks_data")}.
+#'
+#' @param minCoverage A numeric value between 0 and 1 specifying the minimum
+#'   proportion of required CpGs that must be present. Default is 0.5.
 #' @param verbose Logical. Whether to print status messages.
 #'
 #'
@@ -51,15 +65,36 @@
 #' )
 #' hannumBmiqM <- hannumExample[[1]]
 #' phenoTypesHannum <- hannumExample[[2]]
-#' age <- phenoTypesHannum$Age
-#' sex <- ifelse(phenoTypesHannum$Sex == "F", "Female", "Male")
+#' sampleIds <- colnames(hannumBmiqM)
+#' age <- setNames(phenoTypesHannum$Age, sampleIds)
+#'
+#' sex <- setNames(ifelse(phenoTypesHannum$Sex == "F", "Female","Male"),sampleIds)
 #' pcClocksOut <- pcClocks(hannumBmiqM, age, sex, pcClockData)
 #'}
-pcClocks <- function(betaM, age, sex, clockData, minCoverage = 0, verbose = TRUE) {
+pcClocks <- function(betaM, age, sex, clockData, minCoverage = 0.5, verbose = TRUE) {
     if (verbose) message("[PCClocks] Initializing PC-based clock pipeline...")
 
     # --- 1. Input Validation and Conversion ---
-    if (!is.matrix(betaM)) stop("Input 'betaM' must be a matrix.")
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = TRUE
+    )
+    
+    sampleIds <- colnames(betaM)
+    
+    age <- .validateAge(
+      age = age,
+      sampleNames = sampleIds,
+      reorder = FALSE
+    )
+    
+    sex <- .validateSex(
+      sex = sex,
+      sampleNames = sampleIds,
+      allowedValues = c("Male", "Female"),
+      reorder = FALSE
+    )
+  
 
     # Validate clockData Hash (Security & Integrity Check)
     if (rlang::hash(clockData) != "46386ec4be2b2a5239cf67b242d7dc24") {
@@ -67,10 +102,10 @@ pcClocks <- function(betaM, age, sex, clockData, minCoverage = 0, verbose = TRUE
     }
 
     pheno <- data.frame(
-        SampleID = colnames(betaM),
-        Age = age,
-        Female = ifelse(sex == "Female", 1, 0),
-        stringsAsFactors = FALSE
+      SampleID = sampleIds,
+      Age = unname(age),
+      Female = unname(ifelse(sex == "Female", 1, 0)),
+      stringsAsFactors = FALSE
     )
 
     # --- 2. Standardized Preprocessing & Coverage Check ---
@@ -86,9 +121,26 @@ pcClocks <- function(betaM, age, sex, clockData, minCoverage = 0, verbose = TRUE
     )
 
     if (is.null(betaProcessed)) {
-        res <- pheno
-        res[, 4:17] <- NA_real_ # Fill with NAs if coverage fails
-        return(res)
+      nSamples <- length(sampleIds)
+      
+      return(data.frame(
+        SampleID = sampleIds,
+        PCHorvath2013 = rep(NA_real_, nSamples),
+        PCHorvath2018 = rep(NA_real_, nSamples),
+        PCHannum = rep(NA_real_, nSamples),
+        PCPhenoAge = rep(NA_real_, nSamples),
+        PCDNAmTL = rep(NA_real_, nSamples),
+        PCPACKYRS = rep(NA_real_, nSamples),
+        PCADM = rep(NA_real_, nSamples),
+        PCB2M = rep(NA_real_, nSamples),
+        PCCystatinC = rep(NA_real_, nSamples),
+        PCGDF15 = rep(NA_real_, nSamples),
+        PCLeptin = rep(NA_real_, nSamples),
+        PCPAI1 = rep(NA_real_, nSamples),
+        PCTIMP1 = rep(NA_real_, nSamples),
+        PCGrimAge1 = rep(NA_real_, nSamples),
+        stringsAsFactors = FALSE
+      ))
     }
 
     # --- 3. PC Projections and Clock Estimation ---
@@ -132,7 +184,15 @@ pcClocks <- function(betaM, age, sex, clockData, minCoverage = 0, verbose = TRUE
     grimComp <- pheno[, clockData$CalcPCGrimAge$components]
     pheno$PCGrimAge1 <- as.numeric(as.matrix(grimComp) %*% clockData$CalcPCGrimAge$PCGrimAge.model + clockData$CalcPCGrimAge$PCGrimAge.intercept)
     
-    pheno$Age <-NULL
-    pheno$Female <-NULL
+    if (!identical(pheno$SampleID, sampleIds)) {
+      stop(
+        "[PCClocks] Internal sample alignment failed.",
+        call. = FALSE
+      )
+    }
+    
+    pheno$Age <- NULL
+    pheno$Female <- NULL
+    
     return(pheno)
 }

@@ -1,6 +1,6 @@
 Package: OmniAgeR
 Title: Aging Omic Biomarkers from DNA Methylation and Transcriptomics
-Version: 0.99.9000
+Version: 0.99.9100
 Authors@R: 
     c(person(given = "Zhaozhen",
              family = "Du",

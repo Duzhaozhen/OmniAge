@@ -5,11 +5,13 @@
 #' the epigenetic age for each sample based on the elastic net model developed
 #' by Zhang et al. (2019).
 #'
-#' @param betaM A numeric matrix of DNA methylation beta values.
-#'   `rownames` (CpG probe IDs) and `colnames` (Sample IDs) are required.
-#'   The matrix should not contain `NA` values.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @details
@@ -22,7 +24,10 @@
 #' by taking the weighted sum of these standardized values using the model's
 #' pre-defined coefficients.
 #'
-#' @return A numeric vector of predicted ages, with sample names preserved.
+#' @return A numeric vector containing one predicted DNAm age per
+#'   sample, in the same order as the columns of \code{betaM}. If
+#'   \code{betaM} has column names, these are retained as the names of the
+#'   returned vector; otherwise, an unnamed numeric vector is returned.
 #'
 #'
 #' @references
@@ -41,8 +46,13 @@
 #' zhangClockOut <- zhangClock(hannumBmiqM)
 #'
 zhangClock <- function(betaM,
-                       minCoverage = 0,
+                       minCoverage = 0.5,
                        verbose = TRUE) {
+  
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     zhangClockCoef <- loadOmniAgeRdata(
         "omniager_zhang_clock_coef",
         verbose = verbose

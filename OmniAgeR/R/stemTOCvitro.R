@@ -7,11 +7,14 @@
 #' This function takes as input an Illumina 450k/EPIC DNAm beta matrix
 #' and will return the stemTOCvitro score.
 #'
-#' @param betaM A numeric matrix of DNAm beta values (probes as rows). Rows
-#' should be Illumina 450k/EPIC CpG identifiers and columns should be samples.
-#' @param minCoverage Numeric (0-1). Minimum required probe coverage.
-#'   Default is 0.
-#' @param verbose Logical. Whether to print coverage statistics.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.5.
+#' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @details The function will return the 0.95 upper quantile of
 #' the 629 stemTOCvitro CpGs.
@@ -37,7 +40,12 @@
 #'
 
 
-stemTOCvitro <- function(betaM, minCoverage = 0, verbose = TRUE) {
+stemTOCvitro <- function(betaM, minCoverage = 0.5, verbose = TRUE) {
+  
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     stemTOCvitroCpG <- loadOmniAgeRdata(
         "omniager_stemtocvitro_cpg",
         verbose = verbose

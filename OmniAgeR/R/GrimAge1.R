@@ -12,14 +12,25 @@
 #' This score is calibrated to the scale of chronological age to produce the
 #' final `DNAmGrimAge1`.
 #'
-#' @param betaM A numeric matrix of DNA methylation beta values. Rows should
-#'   represent CpG sites and columns should represent individual samples.
-#' @param age A numeric vector of chronological ages for the samples
-#'  corresponding to the columns in `betaM`.
-#' @param sex A character vector of sample sexes. Must contain "Male" or
-#'  "Female" for each sample.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and sample identifiers as column names.
+#'   \code{colnames(betaM)} must be provided and must be identical to
+#'   \code{names(age)} and \code{names(sex)}.
+#' @param age A numeric vector containing chronological age for each sample.
+#'   A named vector is recommended. If names are supplied, they must be
+#'   identical to \code{colnames(betaM)}, including sample order. An unnamed
+#'   vector is accepted when its length equals \code{ncol(betaM)}; in this
+#'   case, values are matched to samples according to the column order of
+#'   \code{betaM}, and a warning is issued.
+#' @param sex A character or factor vector containing sex for each sample.
+#'   Values must be either \code{"Male"} or \code{"Female"}. A named vector
+#'   is recommended. If names are supplied, they must be identical to
+#'   \code{colnames(betaM)}, including sample order. An unnamed vector is
+#'   accepted when its length equals \code{ncol(betaM)}; in this case, values
+#'   are matched to samples according to the column order of \code{betaM},
+#'   and a warning is issued.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return
@@ -47,11 +58,34 @@
 #' )
 #' hannumBmiqM <- hannumExample[[1]]
 #' phenoTypesHannum <- hannumExample[[2]]
-#' age <- phenoTypesHannum$Age
-#' sex <- ifelse(phenoTypesHannum$Sex == "F", "Female", "Male")
-#' GrimAge1Oout <- grimAge1(betaM = hannumBmiqM, age, sex)
+#' sampleIDs <- colnames(hannumBmiqM)
+#'
+#' age <- setNames(phenoTypesHannum$Age, sampleIDs)
+#'
+#' sex <- setNames(
+#'     ifelse(phenoTypesHannum$Sex == "F", "Female", "Male"),
+#'     sampleIDs
+#' )
+#' grimAge1Out  <- grimAge1(betaM = hannumBmiqM, age, sex)
 grimAge1 <- function(betaM, age, sex,
-                     minCoverage = 0, verbose = TRUE) {
+                     minCoverage = 0.5, verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = TRUE
+    )
+    
+    age <- .validateAge(
+      age,
+      sampleNames = colnames(betaM),
+      reorder = FALSE
+    )
+    
+    sex <- .validateSex(
+      sex,
+      sampleNames = colnames(betaM),
+      allowedValues = c("Male", "Female"),
+      reorder = FALSE
+    )
     # 1. Load model weights
     grimage1 <- loadOmniAgeRdata(
         "omniager_grimage1_model",

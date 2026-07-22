@@ -22,15 +22,17 @@
 #'   \item `Body_fat_Perc` (Body Fat Percentage)
 #' }
 #'
-#' @param betaM A numeric matrix of beta values. Rows should be CpG probes and
-#' columns should be individual samples.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return
 #' A `list` containing 10 named elements, one for each trait. Each element is
-#' a **named numeric vector** of the calculated epigenetic scores.
+#' a **numeric vector** of the calculated epigenetic scores.
 #' \itemize{
 #'   \item \strong{`BMI`}: Numeric vector of predicted scores.
 #'   \item \strong{`Smoking`}: Numeric vector of predicted scores.
@@ -43,7 +45,6 @@
 #'   \item \strong{`WHR`}: Numeric vector of predicted scores.
 #'   \item \strong{`Body_fat_Perc`}: Numeric vector of predicted scores.
 #' }
-#' Each vector is named with the sample IDs from the `rownames` of `beta.m`.
 #'
 #' @export
 #'
@@ -60,8 +61,13 @@
 #' mcCartneyTraitOut <- mcCartneyTrait(hannumBmiqM)
 #'
 mcCartneyTrait <- function(betaM,
-                           minCoverage = 0,
+                           minCoverage = 0.5,
                            verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
+  
     # --- Step 1: Load Coefficients ---
     mcCartneyTraitCoef <- loadOmniAgeRdata(
         "omniager_mccartney_trait_coef",

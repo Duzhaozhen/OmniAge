@@ -16,16 +16,20 @@
 #' controls or those with non-malignant liver diseases.
 #'
 #'
-#' @param betaM A numeric matrix of DNA methylation beta values.
-#'   `rownames` (CpG probe IDs) and `colnames` (Sample IDs) are required.
-#'   The matrix should not contain `NA` values.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
+#'   
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
-#' @return A named numeric vector containing the calculated methylation scores
-#' (cd-score) for each sample.
-#'
+#' @return A numeric vector containing one methylation score per
+#'   sample, in the same order as the columns of \code{betaM}. If
+#'   \code{betaM} has column names, these are retained as the names of the
+#'   returned vector; otherwise, an unnamed numeric vector is returned.
 #'
 #' @export
 #'
@@ -43,8 +47,14 @@
 #' hepatoXuRiskO <- hepatoXuRisk(hannumBmiqM)
 #'
 hepatoXuRisk <- function(betaM,
-                         minCoverage = 0,
+                         minCoverage = 0.5,
                          verbose = TRUE) {
+  
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
+  
     hepatoXuCoef <- loadOmniAgeRdata(
         "omniager_hepato_xu_coef",
         verbose = verbose

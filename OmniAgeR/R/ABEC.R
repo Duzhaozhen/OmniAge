@@ -12,17 +12,20 @@
 #' It uses an internal helper to handle missing probes and compute the
 #' final age estimates.
 #'
-#' @param betaM A numeric matrix of DNA methylation beta values.
-#'   `rownames` (CpG probe IDs) and `colnames` (Sample IDs) are required.
-#'   The matrix should not contain `NA` values.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
+#'   
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
-#'
-#'
-#' @return A numeric vector of predicted biological ages. The vector is
-#' named using the sample IDs from the \code{rownames} of \code{betaM}.
+#' @return A numeric vector containing one predicted age per
+#'   sample, in the same order as the columns of \code{betaM}. If
+#'   \code{betaM} has column names, these are retained as the names of the
+#'   returned vector; otherwise, an unnamed numeric vector is returned.
 #'
 #' @export
 #'
@@ -40,8 +43,12 @@
 #' abecOut <- leeABEC(hannumBmiqM)
 #'
 leeABEC <- function(betaM,
-                    minCoverage = 0,
+                    minCoverage = 0.5,
                     verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     abecCoef <- loadOmniAgeRdata("omniager_abec_coef", verbose = verbose)
     return(.calLinearClock(betaM, abecCoef, "leeABEC", minCoverage, verbose))
 }
@@ -72,8 +79,12 @@ leeABEC <- function(betaM,
 #' eabecOut <- leeExtendedABEC(hannumBmiqM)
 #'
 leeExtendedABEC <- function(betaM,
-                            minCoverage = 0,
+                            minCoverage = 0.5,
                             verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     eabecCoef <- loadOmniAgeRdata("omniager_eabec_coef", verbose = verbose)
     return(.calLinearClock(betaM, eabecCoef, "leeExtendedABEC", minCoverage, verbose))
 }
@@ -102,8 +113,12 @@ leeExtendedABEC <- function(betaM,
 #' cabecOut <- leeCommonABEC(hannumBmiqM)
 #'
 leeCommonABEC <- function(betaM,
-                          minCoverage = 0,
+                          minCoverage = 0.5,
                           verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     cabecCoef <- loadOmniAgeRdata("omniager_cabec_coef", verbose = verbose)
     return(.calLinearClock(betaM, cabecCoef, "leeCommonABEC", minCoverage, verbose))
 }

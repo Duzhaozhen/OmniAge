@@ -4,24 +4,34 @@
 \alias{pcClocks}
 \title{Calculate Principal Component (PC) Epigenetic Clocks}
 \usage{
-pcClocks(betaM, age, sex, clockData, minCoverage = 0, verbose = TRUE)
+pcClocks(betaM, age, sex, clockData, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix of DNA methylation (beta) values.
-\strong{Samples must be in columns} and CpG probes in rows.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and sample identifiers as column names.
+\code{colnames(betaM)} must be provided and must be identical to
+\code{names(age)} and \code{names(sex)}.}
 
-\item{age}{A numeric vector of chronological ages for each sample,
-in the same order as the columns of \code{DNAm}.}
+\item{age}{A numeric vector containing chronological age for each sample.
+A named vector is recommended. If names are supplied, they must be
+identical to \code{colnames(betaM)}, including sample order. An unnamed
+vector is accepted when its length equals \code{ncol(betaM)}; in this
+case, values are matched to samples according to the column order of
+\code{betaM}, and a warning is issued.}
 
-\item{sex}{A character vector of biological sex for each sample, in the
-same order as the columns of \code{DNAm}. Values of "Female" are
-encoded as 1; all other values are encoded as 0.}
+\item{sex}{A character or factor vector containing sex for each sample.
+Values must be either \code{"Male"} or \code{"Female"}. A named vector
+is recommended. If names are supplied, they must be identical to
+\code{colnames(betaM)}, including sample order. An unnamed vector is
+accepted when its length equals \code{ncol(betaM)}; in this case, values
+are matched to samples according to the column order of \code{betaM},
+and a warning is issued.}
 
-\item{clockData}{The pre-loaded data object from
-\code{loadOmniAgeRData("PCClocks_data")}.}
+\item{clockData}{The PC clock model object returned by
+\code{loadOmniAgeRdata("PCClocks_data")}.}
 
-\item{minCoverage}{Numeric (0-1). Minimum required probe coverage.
-Default is 0.}
+\item{minCoverage}{A numeric value between 0 and 1 specifying the minimum
+proportion of required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{Logical. Whether to print status messages.}
 }
@@ -53,8 +63,10 @@ hannumExample <- loadOmniAgeRdata(
 )
 hannumBmiqM <- hannumExample[[1]]
 phenoTypesHannum <- hannumExample[[2]]
-age <- phenoTypesHannum$Age
-sex <- ifelse(phenoTypesHannum$Sex == "F", "Female", "Male")
+sampleIds <- colnames(hannumBmiqM)
+age <- setNames(phenoTypesHannum$Age, sampleIds)
+
+sex <- setNames(ifelse(phenoTypesHannum$Sex == "F", "Female","Male"),sampleIds)
 pcClocksOut <- pcClocks(hannumBmiqM, age, sex, pcClockData)
 }
 }

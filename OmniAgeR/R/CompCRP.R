@@ -16,11 +16,14 @@
 #' naive T-cells. The resulting output is a relative score that captures the
 #' methylation pattern associated with CRP levels.
 #'
-#' @param betaM A numeric matrix of DNAm beta values (probes as rows). Rows
-#' should be Illumina 450k/EPIC CpG identifiers and columns should be samples.
-#' @param minCoverage Numeric (0-1). Minimum required probe coverage.
-#'   Default is 0.
-#' @param verbose Logical. Whether to print coverage statistics.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.5.
+#' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return A \code{list} containing two numeric vectors:
 #' \code{CRP} and \code{intCRP}.
@@ -39,7 +42,13 @@
 #'     verbose = FALSE
 #' )[[1]]
 #' compcrpOut <- compCRP(hannumBmiqM)
-compCRP <- function(betaM, minCoverage = 0, verbose = TRUE) {
+compCRP <- function(betaM, minCoverage = 0.5, verbose = TRUE) {
+    
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
+
     crpCpGList <- loadOmniAgeRdata(
         "omniager_crp_cpg",
         verbose = verbose

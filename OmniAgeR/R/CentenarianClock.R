@@ -5,10 +5,13 @@
 #' serves as a wrapper that loads the internal clock coefficients and computes
 #' the linear predictors for each clock using the helper function.
 #'
-#' @param betaM a matrix of methylation beta values.
-#' Needs to be rows = samples and columns = CpGs, with rownames and colnames.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return A list containing the predicted scores for each Centenarian clock.
@@ -32,8 +35,12 @@
 #' centenarianClockOut <- centenarianClock(hannumBmiqM)
 #'
 centenarianClock <- function(betaM,
-                             minCoverage = 0,
+                             minCoverage = 0.5,
                              verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     # --- Step 1: Load Coefficients ---
     CentenarianENCoef <- loadOmniAgeRdata(
         "omniager_centenarian_coef",

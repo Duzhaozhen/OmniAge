@@ -4,14 +4,17 @@
 \alias{linClock}
 \title{Calculate Lin DNAm Age (2016)}
 \usage{
-linClock(betaM, minCoverage = 0, verbose = TRUE)
+linClock(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A matrix of beta values (CpGs in rows, samples in columns).
-This matrix must be pre-normalized (e.g., via BMIQ) and imputed.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional. The matched CpG values used for
+calculation must not contain missing values.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }

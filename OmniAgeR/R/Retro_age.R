@@ -5,15 +5,14 @@
 #' chronological age, based on the models developed by Ndhlovu et al. (2024).
 #' This function computes both Version 1 (V1) and Version 2 (V2) of the clock.
 #'
-#' @param betaM A numeric matrix of DNA methylation beta values.
-#'   `rownames` (CpG probe IDs) and `colnames` (Sample IDs) are required.
-#'   The matrix should not contain `NA` values.
-#'
-#' @param minCoverage A numeric value between 0 and 1 (default is 0).
-#' Specifies the minimum proportion of required CpGs that must be present
-#' in the input matrix for the clock calculation to proceed.
-#' @param verbose A logical value. If TRUE (default), the function will
-#' print messages detailing the calculation steps.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.5.
+#' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return A list containing the predicted age for the "V1" and "V2" clocks.
 #'
@@ -31,8 +30,12 @@
 #' )[[1]]
 #' retroAgeRes <- retroAge(hannumBmiqM)
 retroAge <- function(betaM,
-                     minCoverage = 0,
+                     minCoverage = 0.5,
                      verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     # --- Step 1: Load Coefficients ---
     retroAgeCoef <- loadOmniAgeRdata(
         "omniager_retroage_coef",

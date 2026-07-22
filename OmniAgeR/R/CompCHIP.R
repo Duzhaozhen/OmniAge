@@ -12,11 +12,14 @@
 #'
 #' Probes with zero variance across samples are excluded.
 #'
-#' @param betaM A numeric matrix of DNAm beta values (probes as rows). Rows
-#' should be Illumina 450k/EPIC CpG identifiers and columns should be samples.
-#' @param minCoverage Numeric (0-1). Minimum required probe coverage.
-#'   Default is 0.
-#' @param verbose Logical. Whether to print coverage statistics.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
+#' @param minCoverage A numeric value (0-1). The minimum proportion of
+#'   required CpGs that must be present. Default is 0.5.
+#' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return
 #' A \code{list} of numeric vectors, one for each CHIP signature.
@@ -37,7 +40,12 @@
 #'     verbose = FALSE
 #' )[[1]]
 #' compchipOut <- compCHIP(hannumBmiqM)
-compCHIP <- function(betaM, minCoverage = 0, verbose = TRUE) {
+compCHIP <- function(betaM, minCoverage = 0.5, verbose = TRUE) {
+  
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     chipCpGList <- loadOmniAgeRdata(
         "omniager_chip_cpg",
         verbose = verbose

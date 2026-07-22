@@ -19,12 +19,15 @@
 #' linked to epigenetic age acceleration.
 #'
 #'
-#' @param betaM A numeric matrix of beta values. Rows should be CpG probes and
-#' columns should be individual samples.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
-#'
+#' 
 #' @return A \code{list} containing three numeric vectors: \code{StocH},
 #'   \code{StocP}, and \code{StocZ}, representing predicted DNAm ages.
 #'
@@ -41,7 +44,11 @@
 #' # Load example data
 #' hannumExample <- loadOmniAgeRdata("omniager_hannum_example")
 #' stochClocksOut <- stochClocks(hannumExample[[1]])
-stochClocks <- function(betaM, minCoverage = 0, verbose = TRUE) {
+stochClocks <- function(betaM, minCoverage = 0.5, verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     stocAll <- loadOmniAgeRdata("omniager_stoch_clocks")
 
     stocNames <- paste0("Stoc", names(stocAll))

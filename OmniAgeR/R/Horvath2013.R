@@ -3,18 +3,26 @@
 #' @description A function to calculate the Horvath epigenetic clock age(2013)
 #' from a DNA methylation beta value matrix.
 #'
-#' @param betaM A numeric matrix of beta values. Rows should be CpG probes and
-#' columns should be individual samples.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
+#'   
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
+#' 
 #' @details Implements the Horvath (2013) pan-tissue clock. The function
 #' calculates a weighted linear predictor from 353 CpGs found in the input
 #' matrix and then transforms this value using a non-linear function to
 #' return the final DNAm age.
 #'
-#' @return A numeric vector of predicted DNAm ages, with names corresponding to
-#' the sample IDs from the input matrix's column names.
+#' @return A numeric vector containing one predicted age per
+#'   sample, in the same order as the columns of \code{betaM}. If
+#'   \code{betaM} has column names, these are retained as the names of the
+#'   returned vector; otherwise, an unnamed numeric vector is returned.
+#'
 #'
 #' @export
 #'
@@ -29,9 +37,16 @@
 #'     verbose = FALSE
 #' )[[1]]
 #' horvath2013ClockOut <- horvath2013Clock(hannumBmiqM)
+#' 
+
 horvath2013Clock <- function(betaM,
-                             minCoverage = 0,
+                             minCoverage = 0.5,
                              verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
+  
     horvath2013Coef <- loadOmniAgeRdata(
         "omniager_horvath2013_coef",
         verbose = verbose

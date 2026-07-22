@@ -10,7 +10,7 @@
 #' Columns represent individual samples.
 #' 
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' 
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #' 
@@ -34,11 +34,11 @@
 #'     "omniager_mouse_rrbs_example",
 #'     verbose = FALSE
 #' )
-#' predRes <- meerMouse(exampleMat)
+#' predRes <- meerMouse(exampleMat,minCoverage = 0)
 #' 
 
 meerMouse <- function(betaM,
-                        minCoverage = 0,
+                        minCoverage = 0.5,
                         verbose = TRUE) {
   
   if (!is.numeric(betaM)) {

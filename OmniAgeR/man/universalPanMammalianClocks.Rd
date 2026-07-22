@@ -8,7 +8,7 @@ universalPanMammalianClocks(
   betaM,
   speciesName,
   anageData = NULL,
-  minCoverage = 0,
+  minCoverage = 0.5,
   verbose = TRUE
 )
 }

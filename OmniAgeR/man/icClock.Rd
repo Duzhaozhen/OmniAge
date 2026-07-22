@@ -4,22 +4,23 @@
 \alias{icClock}
 \title{Calculate the Intrinsic Capacity (IC) Epigenetic Clock.}
 \usage{
-icClock(betaM, minCoverage = 0, verbose = TRUE)
+icClock(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix of beta values. Rows should be CpG probes and
-columns should be individual samples. The matrix should not
-contain \code{NA} values.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional. The matched CpG values used for
+calculation must not contain missing values.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
 \value{
 A \strong{numeric vector} containing the predicted Intrinsic Capacity (IC) score
-for each sample. The vector is named with the sample IDs from the \code{rownames}
-of \code{betaM}.
+for each sample.
 }
 \description{
 Implements the DNA methylation-based predictor of Intrinsic Capacity,

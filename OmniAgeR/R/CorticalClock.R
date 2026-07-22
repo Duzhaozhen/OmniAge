@@ -3,15 +3,19 @@
 #' @description Predicts DNAm age in cortical samples using the elastic net
 #' model by Shireby et al. (2020).
 #'
-#' @param betaM A numeric matrix of DNA methylation beta values.
-#'   `rownames` (CpG probe IDs) and `colnames` (Sample IDs) are required.
-#'   The matrix should not contain `NA` values.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
-#' @return A named numeric vector of predicted cortical DNAm ages for
-#' each sample.
+#' @return A numeric vector containing one predicted age per
+#'   sample, in the same order as the columns of \code{betaM}. If
+#'   \code{betaM} has column names, these are retained as the names of the
+#'   returned vector; otherwise, an unnamed numeric vector is returned.
 #'
 #' @references
 #' Shireby GL, Davies JP, Francis PT, et al.
@@ -27,7 +31,12 @@
 #'     verbose = FALSE
 #' )[[1]]
 #' corticalClockOut <- corticalClock(hannumBmiqM)
-corticalClock <- function(betaM, minCoverage = 0, verbose = TRUE) {
+corticalClock <- function(betaM, minCoverage = 0.5, verbose = TRUE) {
+  
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     # --- Step 1: Load and parse coefficients (from package internal data) ---
     CorticalClockList <- loadOmniAgeRdata(
         "omniager_cortical_clock_coef",

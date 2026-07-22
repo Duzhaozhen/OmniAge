@@ -9,17 +9,18 @@
 #' DNAm biomarker trained on clinical evaluations of physical and mental
 #' capacities
 #'
-#' @param betaM A numeric matrix of beta values. Rows should be CpG probes and
-#' columns should be individual samples. The matrix should not
-#' contain `NA` values.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
+#' 
 #' @return
 #' A **numeric vector** containing the predicted Intrinsic Capacity (IC) score
-#' for each sample. The vector is named with the sample IDs from the `rownames`
-#' of `betaM`.
-#'
+#' for each sample. 
 #' @export
 #'
 #' @references
@@ -36,8 +37,14 @@
 #' icClockO <- icClock(hannumBmiqM)
 #'
 icClock <- function(betaM,
-                    minCoverage = 0,
+                    minCoverage = 0.5,
                     verbose = TRUE) {
+  
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
+  
     icClockCoef <- loadOmniAgeRdata(
         "omniager_ic_clock_coef",
         verbose = verbose

@@ -5,13 +5,19 @@
 #' (Haghani et al., 2025). This function computes one of the three available
 #' clock versions (Static, Dynamic, or HumanMouse).
 #'
-#' @param betaM A numeric matrix (Rows: CpGs, Cols: Samples) or \code{SummarizedExperiment}.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. Sample identifiers in
+#'   \code{colnames(betaM)} are recommended but not required. If column names
+#'   are absent, temporary internal sample identifiers are generated during
+#'   calculation.
 #' @param clockVersion Character. One of \code{"Dynamic"}, \code{"Static"}, or \code{"HumanMouse"}.
-#' @param minCoverage Numeric (0-1). Minimum required proportion of CpGs present. Default is 0.
-#' @param verbose Logical. Whether to print status messages.
+#' @param minCoverage Numeric (0-1). Minimum required probe coverage for
+#'   imputation and calculation. Default is 0.5.
+#' @param verbose Logical. Whether to print progress messages.
+#'   Default is \code{TRUE}.
 #'
 #' @return
-#' A `list` where each element is a named numeric vector of predicted values.
+#' A `list` where each element is a numeric vector of predicted values.
 #' The names of the list elements correspond to the specific sub-clocks
 #' calculated (e.g., `HumanMouse_HumanMouse`, `Static_Static`, etc.).
 #'
@@ -50,9 +56,12 @@
 #' ensembleAgeOut <- ensembleAge(hannumBmiqM, clockVersion = "HumanMouse")
 #'
 ensembleAge <- function(betaM, clockVersion = c("HumanMouse", "Static", "Dynamic"),
-                        minCoverage = 0, verbose = TRUE) {
+                        minCoverage = 0.5, verbose = TRUE) {
     clockVersion <- match.arg(clockVersion)
-
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     # --- 1. Data Loading --
     ensembleAgeCoef <- loadOmniAgeRdata(
         "omniager_ensembleage_coef",

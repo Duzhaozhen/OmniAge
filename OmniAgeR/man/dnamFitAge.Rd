@@ -2,54 +2,107 @@
 % Please edit documentation in R/DNAmFitAge.R
 \name{dnamFitAge}
 \alias{dnamFitAge}
-\title{Calculate DNAmFitAge and related fitness biomarkers}
+\title{Calculate DNAmFitAge and DNAm fitness biomarkers}
 \usage{
-dnamFitAge(betaM, age, sex, grimageVector, minCoverage = 0, verbose = TRUE)
+dnamFitAge(betaM, age, sex, grimageVector, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix. \strong{Rows must be CpGs, Columns must be Samples.}
-The \code{colnames} must be the sample IDs.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and sample identifiers as column names.
+\code{colnames(betaM)} must be provided and must be identical to
+\code{names(age)}, \code{names(sex)} and
+\code{names(grimageVector)}.}
 
-\item{age}{A numeric vector of chronological age for each sample.
-The order \strong{must match the column order} of \code{betaM}.}
+\item{age}{A numeric vector containing chronological age for each sample.
+A named vector is recommended. If names are supplied, they must be
+identical to \code{colnames(betaM)}, including sample order. An unnamed
+vector is accepted when its length equals \code{ncol(betaM)}; in this
+case, values are matched to samples according to the column order of
+\code{betaM}, and a warning is issued.}
 
-\item{sex}{A character or factor vector of sex for each sample
-(e.g., "Male" or "Female"). The order \strong{must match the column order}
-of \code{beta_matrix}.}
+\item{sex}{A character or factor vector containing sex for each sample.
+Values must be either \code{"Male"} or \code{"Female"}. A named vector
+is recommended. If names are supplied, they must be identical to
+\code{colnames(betaM)}, including sample order. An unnamed vector is
+accepted when its length equals \code{ncol(betaM)}; in this case, values
+are matched to samples according to the column order of \code{betaM},
+and a warning is issued.}
 
-\item{grimageVector}{A numeric vector of pre-calculated DNAmGrimAge values.
-The order \strong{must match the column order} of \code{betaM}.}
+\item{grimageVector}{A numeric vector containing pre-calculated
+DNAmGrimAge values for each sample. A named vector is recommended.
+If names are supplied, they must be identical to
+\code{colnames(betaM)}, including sample order. An unnamed vector is
+accepted when its length equals \code{ncol(betaM)}; in this case, values
+are matched to samples according to the column order of \code{betaM},
+and a warning is issued.}
 
-\item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+\item{minCoverage}{A numeric value between 0 and 1 specifying the minimum
+proportion of required CpGs that must be present. Default is 0.5.}
 
-\item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages}
+\item{verbose}{Logical. Whether to print progress messages.
+Default is \code{TRUE}.}
 }
 \value{
-A \code{data.frame} with 12 columns:
+A data frame with one row per sample and the following columns:
 \itemize{
-\item \code{SampleID}: The sample identifiers.
-\item \code{DNAmGait_noAge}, \code{DNAmGrip_noAge}, \code{DNAmVO2max}: Fitness biomarkers.
-\item \code{DNAmGait_wAge}, \code{DNAmGrip_wAge}, \code{DNAmFEV1_wAge}: Age-adjusted fitness biomarkers.
-\item \code{DNAmGrimAge}: The input DNAmGrimAge.
-\item \code{DNAmFitAge}: The calculated biological fitness age.
+\item \code{SampleID}: Sample identifier.
+\item \code{DNAmVO2max}: DNAm-predicted VO2max.
+\item \code{DNAmGait_noAge}: Gait-speed biomarker without age.
+\item \code{DNAmGrip_noAge}: Grip-strength biomarker without age.
+\item \code{DNAmGait_wAge}: Gait-speed biomarker including age.
+\item \code{DNAmGrip_wAge}: Grip-strength biomarker including age.
+\item \code{DNAmFEV1_wAge}: FEV1 biomarker including age.
+\item \code{DNAmGrimAge}: The supplied DNAmGrimAge value.
+\item \code{DNAmFitAge}: The calculated DNAmFitAge value.
 }
 }
 \description{
-Calculates all 6 DNAm fitness biomarkers, DNAmFitAge, and FitAgeAcceleration
-from a DNA methylation matrix and phenotype data.
+Calculates six DNA methylation-based fitness biomarkers and DNAmFitAge
+from a DNA methylation beta-value matrix, chronological age, sex and
+pre-calculated DNAmGrimAge values.
 }
 \examples{
 hannumExample <- loadOmniAgeRdata(
     "omniager_hannum_example",
     verbose = FALSE
 )
+
 hannumBmiqM <- hannumExample[[1]]
 phenoTypesHannum <- hannumExample[[2]]
-age <- phenoTypesHannum$Age
-sex <- ifelse(phenoTypesHannum$Sex == "F", "Female", "Male")
-GrimAge1O <- grimAge1(hannumBmiqM, age, sex)
-dnamFitAgeOut <- dnamFitAge(hannumBmiqM, age, sex, GrimAge1O$DNAmGrimAge1)
+sampleIds <- colnames(hannumBmiqM)
+
+age <- setNames(
+    phenoTypesHannum$Age,
+    sampleIds
+)
+
+sex <- setNames(
+    ifelse(
+        phenoTypesHannum$Sex == "F",
+        "Female",
+        "Male"
+    ),
+    sampleIds
+)
+
+grimAge1Out <- grimAge1(
+    betaM = hannumBmiqM,
+    age = age,
+    sex = sex
+)
+
+grimageVector <- setNames(
+    grimAge1Out$DNAmGrimAge1,
+    grimAge1Out$SampleID
+)
+
+dnamFitAgeOut <- dnamFitAge(
+    betaM = hannumBmiqM,
+    age = age,
+    sex = sex,
+    grimageVector = grimageVector
+)
+
 }
 \references{
 McGreevy KM, Radak Z, Torma F, et al.

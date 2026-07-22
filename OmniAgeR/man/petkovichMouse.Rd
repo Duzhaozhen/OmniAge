@@ -4,16 +4,17 @@
 \alias{petkovichMouse}
 \title{Petkovich Blood Mouse DNA Methylation Age Predictor}
 \usage{
-petkovichMouse(betaM, minCoverage = 0, verbose = TRUE)
+petkovichMouse(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix of beta values (ranging from 0 to 1). Rows must
-be labeled with mouse genomic coordinates (typically in 'chr:pos' format
-based on the mm10/GRCm38 assembly) corresponding to the clock's CpG sites.
-Columns represent individual samples.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional. The matched CpG values used for
+calculation must not contain missing values.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }

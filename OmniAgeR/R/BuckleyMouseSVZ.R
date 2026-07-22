@@ -13,7 +13,7 @@
 #' @param cellTypes Character vector. One or multiple cell types (e.g., 
 #' c("aNSC_NPC", "Astrocyte_qNSC", "Endothelial", "Microglia", "Neuroblast", "Oligodendro")).
 #' @param clockType Character. "chronological" or "biological".
-#' @param minCoverage A numeric value (0-1). Minimum proportion of required genes.
+#' @param minCoverage A numeric value (0-1). Minimum proportion of required genes. Default is 0.5.
 #' @param verbose Logical flag for printing status messages.
 #' 
 #' @return A data frame containing donorId, age, prediction, and cellType.
@@ -57,7 +57,7 @@
 #' 
 #' 
 buckleyMouseSVZ <- function(seuratObj, cellTypes, clockType = "chronological", 
-                            minCoverage = 0, verbose = TRUE) {
+                            minCoverage = 0.5, verbose = TRUE) {
   
   # 1. load model
   clockModelList <- loadOmniAgeRdata(

@@ -10,7 +10,7 @@ ctsClocks(
   dataType = c("bulk", "sorted"),
   ctfM = NULL,
   tissue = c("brain", "otherTissue"),
-  minCoverage = 0,
+  minCoverage = 0.5,
   verbose = TRUE
 )
 }

@@ -4,21 +4,25 @@
 \alias{bernabeuCAge}
 \title{Calculate Chronological Age (cAge) using the hybrid model}
 \usage{
-bernabeuCAge(betaM, minCoverage = 0, verbose = TRUE)
+bernabeuCAge(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix of DNA methylation beta values.
-\code{rownames} (CpG probe IDs) and \code{colnames} (Sample IDs) are required.
-The matrix should not contain \code{NA} values.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional. The matched CpG values used for
+calculation must not contain missing values.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
 \value{
-A named numeric vector of predicted ages. The names of the vector
-correspond to the sample IDs (column names) from \code{betaM}.
+A numeric vector containing one predicted age per
+sample, in the same order as the columns of \code{betaM}. If
+\code{betaM} has column names, these are retained as the names of the
+returned vector; otherwise, an unnamed numeric vector is returned.
 }
 \description{
 This function loads pre-trained cAge model weights and applies

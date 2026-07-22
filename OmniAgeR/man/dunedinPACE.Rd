@@ -4,20 +4,26 @@
 \alias{dunedinPACE}
 \title{Calculate DunedinPACE}
 \usage{
-dunedinPACE(betaM, minCoverage = 0, verbose = TRUE)
+dunedinPACE(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix (Rows: CpGs, Cols: Samples)}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. Sample identifiers in
+\code{colnames(betaM)} are recommended but not required. If column names
+are absent, temporary internal sample identifiers are generated during
+calculation.}
 
 \item{minCoverage}{Numeric (0-1). Minimum required probe coverage for
-imputation and calculation. Default is 0.}
+imputation and calculation. Default is 0.5.}
 
 \item{verbose}{Logical. Whether to print progress messages.
 Default is \code{TRUE}.}
 }
 \value{
-A named numeric vector containing the calculated DunedinPACE
-for each sample.
+A numeric vector containing the calculated DunedinPACE score for
+each sample in the original column order. When \code{betaM} has column
+names, these are retained as the names of the returned vector; otherwise,
+an unnamed numeric vector is returned.
 }
 \description{
 Calculates the DunedinPACE, an epigenetic biomarker that quantifies the pace of biological aging from a single blood sample.

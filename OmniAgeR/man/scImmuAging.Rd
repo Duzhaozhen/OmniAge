@@ -4,7 +4,7 @@
 \alias{scImmuAging}
 \title{Run the scImmuAging prediction pipeline for multiple cell types}
 \usage{
-scImmuAging(seuratObj, cellTypes, minCoverage = 0, verbose = TRUE)
+scImmuAging(seuratObj, cellTypes, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
 \item{seuratObj}{A Seurat object. The meta.data must contain "donor_id",

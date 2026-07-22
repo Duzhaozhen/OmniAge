@@ -4,20 +4,31 @@
 \alias{grimAge2}
 \title{Calculate GrimAge2}
 \usage{
-grimAge2(betaM, age, sex, minCoverage = 0, verbose = TRUE)
+grimAge2(betaM, age, sex, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix of DNA methylation beta values. Rows should
-represent CpG sites and columns should represent individual samples.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and sample identifiers as column names.
+\code{colnames(betaM)} must be provided and must be identical to
+\code{names(age)} and \code{names(sex)}.}
 
-\item{age}{A numeric vector of chronological ages for the samples corresponding
-to the columns in \code{betaM}.}
+\item{age}{A numeric vector containing chronological age for each sample.
+A named vector is recommended. If names are supplied, they must be
+identical to \code{colnames(betaM)}, including sample order. An unnamed
+vector is accepted when its length equals \code{ncol(betaM)}; in this
+case, values are matched to samples according to the column order of
+\code{betaM}, and a warning is issued.}
 
-\item{sex}{A character vector of sample sexes. Must contain "Male" or "Female"
-for each sample.}
+\item{sex}{A character or factor vector containing sex for each sample.
+Values must be either \code{"Male"} or \code{"Female"}. A named vector
+is recommended. If names are supplied, they must be identical to
+\code{colnames(betaM)}, including sample order. An unnamed vector is
+accepted when its length equals \code{ncol(betaM)}; in this case, values
+are matched to samples according to the column order of \code{betaM},
+and a warning is issued.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
@@ -49,9 +60,16 @@ hannumExample <- loadOmniAgeRdata(
 )
 hannumBmiqM <- hannumExample[[1]]
 phenoTypesHannum <- hannumExample[[2]]
-age <- phenoTypesHannum$Age
-sex <- ifelse(phenoTypesHannum$Sex == "F", "Female", "Male")
-GrimAge2Oout <- grimAge2(betaM = hannumBmiqM, age, sex)
+sampleIDs <- colnames(hannumBmiqM)
+
+age <- setNames(phenoTypesHannum$Age, sampleIDs)
+
+sex <- setNames(
+    ifelse(phenoTypesHannum$Sex == "F", "Female", "Male"),
+    sampleIDs
+)
+grimAge2Out  <- grimAge2(betaM = hannumBmiqM, age, sex)
+
 }
 \references{
 Lu AT, Binder AM, Zhang J, et al.

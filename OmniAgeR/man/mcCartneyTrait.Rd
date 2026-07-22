@@ -4,20 +4,22 @@
 \alias{mcCartneyTrait}
 \title{Calculate Epigenetic Surrogates for Complex Traits (McCartney et al. 2018)}
 \usage{
-mcCartneyTrait(betaM, minCoverage = 0, verbose = TRUE)
+mcCartneyTrait(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix of beta values. Rows should be CpG probes and
-columns should be individual samples.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
 \value{
 A \code{list} containing 10 named elements, one for each trait. Each element is
-a \strong{named numeric vector} of the calculated epigenetic scores.
+a \strong{numeric vector} of the calculated epigenetic scores.
 \itemize{
 \item \strong{\code{BMI}}: Numeric vector of predicted scores.
 \item \strong{\code{Smoking}}: Numeric vector of predicted scores.
@@ -30,7 +32,6 @@ a \strong{named numeric vector} of the calculated epigenetic scores.
 \item \strong{\code{WHR}}: Numeric vector of predicted scores.
 \item \strong{\code{Body_fat_Perc}}: Numeric vector of predicted scores.
 }
-Each vector is named with the sample IDs from the \code{rownames} of \code{beta.m}.
 }
 \description{
 Implements the elastic net (EN) predictors for 10 complex traits and

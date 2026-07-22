@@ -18,11 +18,13 @@
 #' The input \code{beta.m} must be a matrix of Beta values (0 to 1). The function
 #' expects CpG probes as row names.
 #'
-#' @param betaM A numeric matrix of DNA methylation beta values.
-#'   `rownames` (CpG probe IDs) and `colnames` (Sample IDs) are required.
-#'   The matrix should not contain `NA` values.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
 #'
 #' @return A numeric vector of predicted biological ages. The vector is
@@ -42,8 +44,12 @@
 #' )[[1]]
 #' wuClockOut <- wuClock(hannumBmiqM)
 wuClock <- function(betaM,
-                    minCoverage = 0,
+                    minCoverage = 0.5,
                     verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
     wuClockCoef <- loadOmniAgeRdata(
         "omniager_wu_clock_coef",
         verbose = verbose

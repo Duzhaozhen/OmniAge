@@ -140,3 +140,313 @@ loadOmniAgeRdata <- function(title, verbose = FALSE, force = FALSE) {
 .antiTrafo <- function(x, adultAge = 20) {
     ifelse(x < 0, (1 + adultAge) * exp(x) - 1, (1 + adultAge) * x + adultAge)
 }
+
+
+
+
+
+#' Validate a DNA methylation beta-value matrix
+#'
+#' @param betaM A DNA methylation beta-value matrix.
+#' @param requireColnames Logical. Whether sample identifiers must be present
+#'   in \code{colnames(betaM)}.
+#'
+#' @return A validated numeric matrix.
+#'
+#' @keywords internal
+#' @noRd
+.validateBetaMatrix <- function(betaM, requireColnames = TRUE) {
+  
+  betaM <- as.matrix(betaM)
+  
+  if (!is.numeric(betaM)) {
+    stop(
+      "`betaM` must be a numeric DNA methylation beta-value matrix.",
+      call. = FALSE
+    )
+  }
+  
+  if (is.null(rownames(betaM))) {
+    stop(
+      "`betaM` must contain CpG probe identifiers in rownames(betaM).",
+      call. = FALSE
+    )
+  }
+  
+  if (anyNA(rownames(betaM)) ||
+      any(!nzchar(rownames(betaM)))) {
+    stop(
+      "All CpG probe identifiers in rownames(betaM) must be ",
+      "non-missing and non-empty.",
+      call. = FALSE
+    )
+  }
+  
+  if (anyDuplicated(rownames(betaM))) {
+    stop(
+      "CpG probe identifiers in rownames(betaM) must be unique.",
+      call. = FALSE
+    )
+  }
+  
+  if (requireColnames && is.null(colnames(betaM))) {
+    stop(
+      "`betaM` must contain sample identifiers in colnames(betaM).",
+      call. = FALSE
+    )
+  }
+  
+  if (!is.null(colnames(betaM))) {
+    
+    if (anyNA(colnames(betaM)) ||
+        any(!nzchar(colnames(betaM)))) {
+      stop(
+        "All sample identifiers in colnames(betaM) must be ",
+        "non-missing and non-empty.",
+        call. = FALSE
+      )
+    }
+    
+    if (anyDuplicated(colnames(betaM))) {
+      stop(
+        "Sample identifiers in colnames(betaM) must be unique.",
+        call. = FALSE
+      )
+    }
+  }
+  
+  betaM
+}
+
+
+#' Validate names of a sample-level covariate
+#'
+#' @param x A sample-level vector.
+#' @param sampleNames Expected sample identifiers.
+#' @param argumentName Name of the argument used in error messages.
+#' @param reorder Logical. Whether to reorder named vectors whose identifiers
+#'   match but occur in a different order.
+#' @param allowUnnamed Logical. Whether an unnamed vector is accepted.
+#'
+#' @return The validated vector.
+#'
+#' @keywords internal
+#' @noRd
+.validateSampleNames <- function(
+    x,
+    sampleNames,
+    argumentName,
+    reorder = FALSE,
+    allowUnnamed = FALSE
+) {
+  xNames <- names(x)
+  
+  # Allow unnamed vectors when explicitly requested.
+  if (is.null(xNames)) {
+    if (!allowUnnamed) {
+      stop(
+        sprintf(
+          "`%s` must be a named vector, and names(%s) must ",
+          argumentName,
+          argumentName
+        ),
+        "match colnames(betaM).",
+        call. = FALSE
+      )
+    }
+    
+    if (length(x) != length(sampleNames)) {
+      stop(
+        sprintf(
+          "`%s` must contain exactly one value for each sample ",
+          argumentName
+        ),
+        "in betaM.",
+        call. = FALSE
+      )
+    }
+    
+    warning(
+      sprintf(
+        "`%s` has no sample names and will therefore be matched ",
+        argumentName
+      ),
+      "to the columns of `betaM` by position. Please ensure that ",
+      sprintf(
+        "the order of `%s` matches colnames(betaM).",
+        argumentName
+      ),
+      call. = FALSE
+    )
+    
+    names(x) <- sampleNames
+    return(x)
+  }
+  
+  if (anyNA(xNames) || any(!nzchar(xNames))) {
+    stop(
+      sprintf(
+        "All sample identifiers in names(%s) must be non-missing ",
+        argumentName
+      ),
+      "and non-empty.",
+      call. = FALSE
+    )
+  }
+  
+  if (anyDuplicated(xNames)) {
+    stop(
+      sprintf(
+        "Sample identifiers in names(%s) must be unique.",
+        argumentName
+      ),
+      call. = FALSE
+    )
+  }
+  
+  if (reorder) {
+    if (!setequal(xNames, sampleNames)) {
+      stop(
+        sprintf(
+          "names(%s) must contain exactly the same sample ",
+          argumentName
+        ),
+        "identifiers as colnames(betaM).",
+        call. = FALSE
+      )
+    }
+    
+    x <- x[sampleNames]
+  } else {
+    if (!identical(xNames, sampleNames)) {
+      stop(
+        sprintf(
+          "names(%s) must be identical to colnames(betaM), ",
+          argumentName
+        ),
+        "including sample identifiers and sample order.",
+        call. = FALSE
+      )
+    }
+  }
+  
+  x
+}
+
+
+#' Validate chronological age
+#'
+#' @param age A numeric vector.
+#' @param sampleNames Expected sample identifiers.
+#' @param reorder Logical. Whether to reorder a named vector.
+#' @param allowUnnamed Logical. Whether to accept an unnamed vector.
+#'
+#' @return A validated numeric age vector.
+#'
+#' @keywords internal
+#' @noRd
+.validateAge <- function(
+    age,
+    sampleNames,
+    reorder = FALSE,
+    allowUnnamed = TRUE
+) {
+  if (!is.numeric(age)) {
+    stop(
+      "`age` must be a numeric vector.",
+      call. = FALSE
+    )
+  }
+  
+  if (length(age) != length(sampleNames)) {
+    stop(
+      "`age` must contain exactly one value for each sample in betaM.",
+      call. = FALSE
+    )
+  }
+  
+  if (anyNA(age) || any(!is.finite(age))) {
+    stop(
+      "`age` must not contain missing or non-finite values.",
+      call. = FALSE
+    )
+  }
+  
+  age <- .validateSampleNames(
+    x = age,
+    sampleNames = sampleNames,
+    argumentName = "age",
+    reorder = reorder,
+    allowUnnamed = allowUnnamed
+  )
+  
+  age
+}
+
+
+#' Validate sample sex
+#'
+#' @param sex A character or factor vector.
+#' @param sampleNames Expected sample identifiers.
+#' @param allowedValues Accepted sex values.
+#' @param reorder Logical. Whether to reorder a named vector.
+#' @param allowUnnamed Logical. Whether to accept an unnamed vector.
+#'
+#' @return A validated character vector.
+#'
+#' @keywords internal
+#' @noRd
+.validateSex <- function(
+    sex,
+    sampleNames,
+    allowedValues = c("Male", "Female"),
+    reorder = FALSE,
+    allowUnnamed = TRUE
+) {
+  sexNames <- names(sex)
+  
+  sex <- as.character(sex)
+  names(sex) <- sexNames
+  
+  if (length(sex) != length(sampleNames)) {
+    stop(
+      "`sex` must contain exactly one value for each sample in betaM.",
+      call. = FALSE
+    )
+  }
+  
+  if (anyNA(sex)) {
+    stop(
+      "`sex` must not contain missing values.",
+      call. = FALSE
+    )
+  }
+  
+  sex <- .validateSampleNames(
+    x = sex,
+    sampleNames = sampleNames,
+    argumentName = "sex",
+    reorder = reorder,
+    allowUnnamed = allowUnnamed
+  )
+  
+  invalidSex <- setdiff(
+    unique(sex),
+    allowedValues
+  )
+  
+  if (length(invalidSex) > 0L) {
+    stop(
+      "`sex` must contain only ",
+      paste(
+        sprintf('"%s"', allowedValues),
+        collapse = " or "
+      ),
+      ". Invalid value(s): ",
+      paste(invalidSex, collapse = ", "),
+      call. = FALSE
+    )
+  }
+  
+  sex
+}

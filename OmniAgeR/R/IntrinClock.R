@@ -5,11 +5,15 @@
 #' DNA methylation data(Illumina 450K and EPIC).
 #' This clock is designed to be resistant to changes in immune cell composition.
 #'
-#' @param betaM A numeric matrix of beta values. Rows should be CpG probes
-#' and columns should be individual samples.
+#' @param betaM A numeric DNA methylation beta-value matrix with CpG probe
+#'   identifiers as row names and samples as columns. CpG identifiers in
+#'   \code{rownames(betaM)} are required. Sample identifiers in
+#'   \code{colnames(betaM)} are optional. The matched CpG values used for
+#'   calculation must not contain missing values.
 #' @param minCoverage A numeric value (0-1). The minimum proportion of
-#'   required CpGs that must be present. Default is 0.
+#'   required CpGs that must be present. Default is 0.5.
 #' @param verbose A logical flag. If `TRUE` (default), prints status messages.
+#' 
 #' @details
 #' The IntrinClock utilizes an elastic net model trained on 410 CpGs and
 #' refined to 381 active predictors. It predicts age by calculating a linear
@@ -23,8 +27,10 @@
 #' }
 #'
 #'
-#' @return A numeric vector of predicted DNAm ages, with names corresponding
-#' to the sample IDs from the input matrix's column names.
+#' @return A numeric vector containing one predicted age per
+#'   sample, in the same order as the columns of \code{betaM}. If
+#'   \code{betaM} has column names, these are retained as the names of the
+#'   returned vector; otherwise, an unnamed numeric vector is returned
 #'
 #' @export
 #'
@@ -42,8 +48,13 @@
 #' )[[1]]
 #' intrinClockO <- intrinClock(hannumBmiqM)
 intrinClock <- function(betaM,
-                        minCoverage = 0,
+                        minCoverage = 0.5,
                         verbose = TRUE) {
+    betaM <- .validateBetaMatrix(
+      betaM,
+      requireColnames = FALSE
+    )
+    
     intrinClockCoef <- loadOmniAgeRdata(
         "omniager_intrin_clock_coef",
         verbose = verbose

@@ -4,18 +4,27 @@
 \alias{epiTOC3}
 \title{Estimate epiTOC3 scores}
 \usage{
-epiTOC3(betaM, age = NULL, minCoverage = 0, verbose = TRUE)
+epiTOC3(betaM, age = NULL, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix of DNAm beta values (probes as rows).}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional when \code{age = NULL}, but are
+required when \code{age} is supplied.}
 
-\item{age}{Optional numeric vector representing chronological ages
-of the samples.}
+\item{age}{A numeric vector containing chronological age for each sample.
+A named vector is recommended. If names are supplied, they must be
+identical to \code{colnames(betaM)}, including sample order. An unnamed
+vector is accepted when its length equals \code{ncol(betaM)}; in this
+case, values are matched to samples according to the column order of
+\code{betaM}, and a warning is issued.}
 
-\item{minCoverage}{Numeric (0-1). Minimum required probe coverage.
-Default is 0.}
+\item{minCoverage}{Numeric value between 0 and 1 specifying the minimum
+required probe coverage. Default is 0.5.}
 
-\item{verbose}{Logical. Whether to print coverage statistics.}
+\item{verbose}{Logical. Whether to print coverage statistics.
+Default is \code{TRUE}.}
 }
 \value{
 A list containing the following entries
@@ -34,6 +43,9 @@ for the intrinsic rate of stem-cell division for the tissue.
 \item irT2: As irT, but for the approximation.
 \item avETOC3: The simple average over the 170 epiTOC3 sites.
 }
+
+Sample-level vectors retain \code{colnames(betaM)} when column names are
+available; otherwise, unnamed numeric vectors are returned.
 }
 \description{
 This function takes as input an Illumina 450k/EPIC DNAm beta matrix and
@@ -49,8 +61,19 @@ lungInv <- loadOmniAgeRdata(
     "omniager_lung_inv",
     verbose = FALSE
 )
+
 lungInvM <- lungInv$bmiq_m
+
 phenoDf <- lungInv$PhenoTypes
-epitoc3Out <- epiTOC3(betaM = lungInvM, age = phenoDf$Age)
+
+age <- setNames(
+    phenoDf$Age,
+    colnames(lungInvM)
+)
+
+epitoc3Out <- epiTOC3(
+    betaM = lungInvM,
+    age = age
+)
 
 }

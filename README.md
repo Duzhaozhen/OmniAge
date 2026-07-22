@@ -38,22 +38,66 @@ This repository is organized as a monorepo to ensure version consistency across 
 
 ## 🚀 Installation
 
-### 1. R Version
+### R Version
 
-Install the development version directly from GitHub using `devtools`:
+Install the development version directly from GitHub:
 
-``` r
-# install.packages("devtools")
-devtools::install_github("Duzhaozhen/OmniAge", subdir = "OmniAgeR")
+```r
+install.packages("remotes")
+
+remotes::install_github(
+    "Duzhaozhen/OmniAge",
+    subdir = "OmniAgeR",
+    upgrade = "never"
+)
 ```
 
-### 2. Python Version
+#### Alternative installation from a downloaded ZIP file
 
-Install via pip with the subdirectory flag:
+If direct installation from GitHub fails because of network restrictions or
+an unstable connection:
 
-``` r
+1. Select **Code → Download ZIP** on this GitHub page.
+2. Save the downloaded archive, for example as `OmniAge-main.zip`.
+3. Install it locally:
+
+```r
+install.packages("remotes")
+
+remotes::install_local(
+    path = "~/Downloads/OmniAge-main.zip",
+    subdir = "OmniAgeR",
+    upgrade = "never"
+)
+```
+
+Alternatively, extract the ZIP archive and install from the package directory:
+
+```r
+remotes::install_local(
+    path = "~/Downloads/OmniAge-main/OmniAgeR",
+    upgrade = "never"
+)
+```
+
+> Downloading the repository ZIP avoids problems when accessing GitHub during
+> package installation. An internet connection may still be required to install
+> missing dependencies and download large optional model-data files.
+
+### Python Version
+
+Clone the repository and install the Python package:
+
+```bash
 git clone https://github.com/Duzhaozhen/OmniAge.git
 cd OmniAge/OmniAgePy
+pip install .
+```
+
+Alternatively, download and extract the repository ZIP file, open a terminal
+inside `OmniAge-main/OmniAgePy`, and run:
+
+```bash
 pip install .
 ```
 

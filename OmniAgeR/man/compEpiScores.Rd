@@ -4,22 +4,26 @@
 \alias{compEpiScores}
 \title{Calculate Epigenetic Scores for the Circulating Proteome (EpiScores)}
 \usage{
-compEpiScores(betaM, minCoverage = 0, verbose = TRUE)
+compEpiScores(betaM, minCoverage = 0.5, verbose = TRUE)
 }
 \arguments{
-\item{betaM}{A numeric matrix of beta values. Rows should be CpG probes and
-columns should be individual samples.}
+\item{betaM}{A numeric DNA methylation beta-value matrix with CpG probe
+identifiers as row names and samples as columns. CpG identifiers in
+\code{rownames(betaM)} are required. Sample identifiers in
+\code{colnames(betaM)} are optional. The matched CpG values used for
+calculation must not contain missing values.}
 
 \item{minCoverage}{A numeric value (0-1). The minimum proportion of
-required CpGs that must be present. Default is 0.}
+required CpGs that must be present. Default is 0.5.}
 
 \item{verbose}{A logical flag. If \code{TRUE} (default), prints status messages.}
 }
 \value{
-A list of length 109. Each element of the list corresponds to one
-calculated EpiScore (one for each protein). The name of each list element is
-the name of the EpiScore. Each element contains a named numeric vector of
-the calculated scores for all samples.
+A list of length 109, with one element for each EpiScore.
+Each element is a numeric vector containing one score per sample in the
+original column order of \code{betaM}. If \code{betaM} has column names,
+these are retained as the names of each score vector; otherwise, unnamed
+numeric vectors are returned.
 }
 \description{
 Computes the 109 validated epigenetic scores (EpiScores) that serve as
