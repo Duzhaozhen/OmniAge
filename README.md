@@ -32,9 +32,8 @@ This repository is organized as a monorepo to ensure version consistency across 
 
 - **`OmniAgeR/`**: An R package providing the core implementation of aging clocks and biomarkers.
 
-- 
-
-  ## **`OmniAgePy/`**: A Python package (`omniage`) optimized for high-throughput aging omic biomarker prediction.
+- **`OmniAgePy/`**: A Python package (`omniage`) optimized for high-throughput aging omic biomarker prediction.
+---
 
 ## 🚀 Installation
 
