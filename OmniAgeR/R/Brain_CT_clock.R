@@ -360,17 +360,21 @@ predictBrainCtAge <- function(inputData, imputeData, modelObj, sampleType) {
 runPredictionPipelineBrainCt <- function(sampleType, seuratObj,
                                          cellTypes, verbose = TRUE) {
     # Load Models and Imputation Data
-    brainCtClocksCoef <- loadOmniAgeRdata(
+    brainCtData <- loadOmniAgeRdata(
         "omniager_brain_celltype_specific_clocks_coef",
         verbose = verbose
     )
-    brainCtClocksCoef <- brainCtClocksCoef[["brain_ct_clocks_coef"]]
-    brainCtImputationList <- brainCtClocksCoef[["Brain_CT_imputation_data_list"]]
+    brainCtClocksCoef <- brainCtData[["brain_ct_clocks_coef"]]
+    brainCtImputationList <- brainCtData[["Brain_CT_imputation_data_list"]]
 
     finalResultsList <- list()
 
     for (ct in cellTypes) {
-        clockKey <- paste(sampleType, ct, sep = "_")
+        clockKey <- paste(
+            sampleType,
+            gsub(" ", "_", ct, fixed = TRUE),
+            sep = "_"
+        )
         modelFolds <- brainCtClocksCoef[[clockKey]]
         imputeData <- brainCtImputationList[[clockKey]]
 
