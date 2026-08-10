@@ -97,7 +97,25 @@ grimAge1 <- function(betaM, age, sex,
     calibParams <- grimage1[[3]] # Calibration means/sds
     uqCpgs <- unique(protCoefs$var[startsWith(protCoefs$var, "cg")])
     fakeWeights <- setNames(rep(1, length(uqCpgs)), uqCpgs)
+    proteinNames <- unique(protCoefs$Y.pred)
     coverage <- .checkCpGCoverage(betaM, fakeWeights, "GrimAge1", minCoverage, verbose)
+    
+    if (!coverage$pass) {
+      res <- data.frame(
+        SampleID = colnames(betaM),
+        matrix(
+          NA_real_,
+          nrow = ncol(betaM),
+          ncol = length(proteinNames),
+          dimnames = list(NULL, proteinNames)
+        ),
+        DNAmGrimAge1 = NA_real_,
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      )
+      return(res)
+    }
+
     # 3. Handle Covariates (Age and Sex)
     femaleVec <- ifelse(sex == "Female", 1, 0)
     # 4. Phase 1: Predict DNAm Protein Biomarkers

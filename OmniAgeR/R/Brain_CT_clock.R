@@ -360,17 +360,22 @@ predictBrainCtAge <- function(inputData, imputeData, modelObj, sampleType) {
 runPredictionPipelineBrainCt <- function(sampleType, seuratObj,
                                          cellTypes, verbose = TRUE) {
     # Load Models and Imputation Data
-    brainCtClocksCoef <- loadOmniAgeRdata(
+    brainCtData <- loadOmniAgeRdata(
         "omniager_brain_celltype_specific_clocks_coef",
         verbose = verbose
     )
-    brainCtClocksCoef <- brainCtClocksCoef[["brain_ct_clocks_coef"]]
-    brainCtImputationList <- brainCtClocksCoef[["Brain_CT_imputation_data_list"]]
+    brainCtClocksCoef <- brainCtData[["brain_ct_clocks_coef"]]
+    brainCtImputationList <- brainCtData[["Brain_CT_imputation_data_list"]]
 
     finalResultsList <- list()
 
     for (ct in cellTypes) {
-        clockKey <- paste(sampleType, ct, sep = "_")
+        #clockKey <- paste(sampleType, ct, sep = "_")
+        clockKey <- paste(
+          sampleType,
+          gsub(" ", "_", ct, fixed = TRUE),
+          sep = "_"
+        )
         modelFolds <- brainCtClocksCoef[[clockKey]]
         imputeData <- brainCtImputationList[[clockKey]]
 
@@ -384,10 +389,21 @@ runPredictionPipelineBrainCt <- function(sampleType, seuratObj,
         if (nrow(dfBase) == 0) next
 
         # 2. 5-Fold prediction
-        foldPreds <- vapply(names(modelFolds), function(f) {
-            res <- predictBrainCtAge(dfBase, imputeData, modelFolds[[f]], sampleType)
-            return(res$prediction)
-        }, numeric(nrow(dfBase)))
+        # foldPreds <- vapply(names(modelFolds), function(f) {
+        #     res <- predictBrainCtAge(dfBase, imputeData, modelFolds[[f]], sampleType)
+        #     return(res$prediction)
+        # }, numeric(nrow(dfBase)))
+        foldPreds <- lapply(names(modelFolds), function(f) {
+          res <- predictBrainCtAge(
+            dfBase,
+            imputeData,
+            modelFolds[[f]],
+            sampleType
+          )
+          res$prediction
+        })
+        
+        foldPreds <- do.call(cbind, foldPreds)
 
         # 3. Calculate the average and construct the result
         res_df <- data.frame(

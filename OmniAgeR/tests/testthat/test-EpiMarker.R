@@ -10,8 +10,11 @@ test_that("epiMarker calculates clocks correctly on Hannum dataset", {
   
   hannumBmiqM <- hannumExample[[1]]
   phenoTypesHannum <- hannumExample[[2]]
-  age <- phenoTypesHannum$Age
-  sex <- ifelse(phenoTypesHannum$Sex == "F", "Female", "Male")
+  sampleIDs <- colnames(hannumBmiqM)
+  age <- setNames(phenoTypesHannum$Age, sampleIDs)
+  sex <- setNames(ifelse(phenoTypesHannum$Sex == "F", "Female", "Male"),
+    sampleIDs
+  )
   
   # 2. Define the exact clocks to be tested
   clockCategories <- c("cellularAging", "chronological", "biological", 
@@ -20,7 +23,7 @@ test_that("epiMarker calculates clocks correctly on Hannum dataset", {
   
   # Get the list of available clocks and format them
   useClocks <- listEpiMarker()
-  useClocks$crossSpecies <- NULL
+  useClocks$otherSpecies <- NULL
   useClocks <- unname(unlist(useClocks))
   
   # Exclude specific PC clocks and SystemsAge for this test suite
@@ -40,7 +43,7 @@ test_that("epiMarker calculates clocks correctly on Hannum dataset", {
   
   # 4. Extract clocks that return simple numeric vectors (non-lists)
   simpleClocks <- hannumEpiAgeRes[!sapply(hannumEpiAgeRes, is.list)]
-  
+  simpleClocks$
   # 5. Extract clocks that return nested lists or data frames
   listClocks <- hannumEpiAgeRes[sapply(hannumEpiAgeRes, is.list)]
   
@@ -83,6 +86,17 @@ test_that("epiMarker calculates clocks correctly on Hannum dataset", {
   
   # 6. Load the expected results from the fixtures directory
   expectedRes <- readRDS(test_path("fixtures", "expected_result.rds"))
+  # Identify newly added clocks
+  newClocks <- setdiff(names(finaleHannumResList), names(expectedRes))
+  # Make sure no previously tested clocks have disappeared
+  missingClocks <- setdiff(names(expectedRes),names(finaleHannumResList))
+  expect_length(missingClocks,0,info = paste(
+      "Previously tested clocks are missing:",
+      paste(missingClocks, collapse = ", ")
+    )
+  )
+  # Remove newly added clocks from this regression comparison
+  finaleHannumResList <- finaleHannumResList[names(expectedRes)]
   
   # 7. Assert equality for each clock result
   for (i in seq_along(finaleHannumResList)) {

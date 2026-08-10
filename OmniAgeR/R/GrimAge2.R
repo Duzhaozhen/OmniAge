@@ -98,7 +98,23 @@ grimAge2 <- function(betaM, age, sex,
 
     uqCpgs <- unique(protCoefs$var[startsWith(protCoefs$var, "cg")])
     fakeWeights <- setNames(rep(1, length(uqCpgs)), uqCpgs)
+    proteinNames <- unique(protCoefs$Y.pred)
     coverage <- .checkCpGCoverage(betaM, fakeWeights, "GrimAge2", minCoverage, verbose)
+    if (!coverage$pass) {
+      res <- data.frame(
+        SampleID = colnames(betaM),
+        matrix(
+          NA_real_,
+          nrow = ncol(betaM),
+          ncol = length(proteinNames),
+          dimnames = list(NULL, proteinNames)
+        ),
+        DNAmGrimAge1 = NA_real_,
+        stringsAsFactors = FALSE,
+        check.names = FALSE
+      )
+      return(res)
+    }
     # 3. Handle Covariates
     femaleVec <- ifelse(sex == "Female", 1, 0)
 
