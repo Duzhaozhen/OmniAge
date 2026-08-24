@@ -173,4 +173,4 @@ We provide step-by-step guides to help you get started with OmniAge:
 
 If you use the OmniAge tool in your research, please cite my paper:
 
-> **Du, Z.**, Ling, Y., Tong, H., Guo, X., & Teschendorff, A. E. (2026). *OmniAge: a compendium of aging omic biomarkers links mitotic clocks to clonal hematopoiesis and causality*. bioRxiv. doi: [10.64898/2026.04.29.720033](https://doi.org/10.64898/2026.04.29.720033)
+> **Du, Z.**, Ling, Y., Tong, H., Guo, X., & Teschendorff, A. E. (2026). The OmniAge compendium of aging omic biomarkers links mitotic clocks to clonal hematopoiesis and causality. *Nature Communications*. https://doi.org/10.1038/s41467-026-76038-w
