@@ -130,7 +130,7 @@ getMarkerWeights <- function(clockNames = "all", verbose = FALSE) {
                 "Lin" = loadOmniAgeRdata("omniager_lin_coef", verbose),
                 "VidalBralo" = loadOmniAgeRdata("omniager_vidalbralo_coef", verbose),
                 "ZhangClock" = loadOmniAgeRdata("omniager_zhang_clock_coef", verbose),
-                "Horvath2018" = loadOmniAgeRdata("omniager_horvath2013_coef", verbose),
+                "Horvath2018" = loadOmniAgeRdata("omniager_horvath2018_coef", verbose),
                 "Bernabeu_cAge" = loadOmniAgeRdata("omniager_bernabeu_cage_coef", verbose),
                 "PedBE"  = loadOmniAgeRdata("omniager_pedbe_coef", verbose),
                 "CorticalClock" = loadOmniAgeRdata("omniager_cortical_clock_coef", verbose),
